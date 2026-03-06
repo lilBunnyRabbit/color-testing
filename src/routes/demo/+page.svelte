@@ -297,7 +297,7 @@
 					</div>
 				</section>
 
-				<section class="d-section">
+				<section id="f" class="d-section">
 					<h2 class="d-section-title">Everything you need</h2>
 					<p class="d-section-sub">Powerful features to help your team succeed</p>
 					<div class="d-cards-3">
