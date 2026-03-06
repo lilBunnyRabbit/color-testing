@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { OKLCH, contrastRatio, contrastRatioAlpha, wcagLevels, wcagColor, simulateVision, visionSimulations, resolveGroups, type ColorGroup, type WcagLevel, type VisionSimulation } from '$lib/oklch';
 
 	type SchemeModule = { default: ColorGroup[] };
@@ -123,7 +124,7 @@
 		</select>
 		<span class="app-count">{colors.length} colors</span>
 		<button class="app-info-btn" onclick={() => infoDialogEl?.showModal()}>Scheme Info</button>
-		<a href="/demo" class="app-info-btn" style="text-decoration: none">Demo</a>
+		<a href="{base}/demo" class="app-info-btn" style="text-decoration: none">Demo</a>
 
 		<label class="app-opacity">
 			<span>fg opacity: {fgOpacityInput}%</span>

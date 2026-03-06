@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { OKLCH, contrastRatio, contrastRatioAlpha, wcagLevels, wcagColor, simulateVision, visionSimulations, resolveGroups, type ColorGroup, type VisionSimulation } from '$lib/oklch';
 
 	type SchemeModule = { default: ColorGroup[] };
@@ -201,7 +202,7 @@
 
 <div class="page">
 	<aside class="sidebar">
-		<a href="/" class="back-link">&larr; Matrix</a>
+		<a href="{base}/" class="back-link">&larr; Matrix</a>
 
 		<label class="field-label">Scheme
 			<select class="field-select" bind:value={schemeIndex}>
