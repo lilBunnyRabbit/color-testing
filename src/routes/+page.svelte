@@ -1042,4 +1042,82 @@
 	.matrix-cell-sep {
 		background: #000;
 	}
+
+	/* Responsive */
+	@media (max-width: 768px) {
+		.app-header {
+			flex-wrap: wrap;
+			gap: 8px;
+			padding: 10px 12px;
+		}
+
+		.app-title {
+			font-size: 15px;
+			width: 100%;
+		}
+
+		.app-swatches {
+			margin-left: 0;
+			width: 100%;
+			order: 10;
+		}
+
+		.app-opacity input[type='range'] {
+			width: 70px;
+		}
+
+		/* Detail dialog */
+		.detail-dialog {
+			max-width: 98vw;
+			max-height: 95vh;
+			width: 98vw;
+			border-radius: 8px;
+		}
+
+		.dialog-inner {
+			max-height: 95vh;
+		}
+
+		.dialog-info-bar {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 10px;
+			padding: 10px 14px;
+		}
+
+		.dialog-stats {
+			margin-left: 0;
+			width: 100%;
+			justify-content: space-between;
+		}
+
+		.dialog-preview-grid {
+			grid-template-columns: 1fr;
+			gap: 24px;
+			padding: 16px;
+		}
+
+		/* Info dialog */
+		.info-dialog {
+			max-width: 98vw;
+			max-height: 95vh;
+			width: 98vw;
+			border-radius: 8px;
+		}
+
+		.info-header {
+			flex-wrap: wrap;
+			gap: 8px;
+			padding: 12px 14px;
+		}
+
+		.info-title {
+			width: 100%;
+		}
+
+		.info-color-values {
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+	}
 </style>

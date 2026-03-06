@@ -6,3 +6,10 @@ body {
 	margin: 0;
 	overflow: hidden;
 }
+
+@media (max-width: 768px) {
+	html,
+	body {
+		overflow: auto;
+	}
+}

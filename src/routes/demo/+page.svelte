@@ -1514,4 +1514,162 @@
 		flex-shrink: 0;
 		opacity: 0.4;
 	}
+
+	/* Responsive */
+	@media (max-width: 768px) {
+		.page {
+			flex-direction: column;
+			height: auto;
+			min-height: 100vh;
+		}
+
+		.sidebar {
+			width: 100%;
+			max-height: 40vh;
+			border-right: none;
+			border-bottom: 1px solid #333;
+			flex-shrink: 0;
+		}
+
+		.demo-scroll {
+			flex: 1;
+			min-height: 0;
+		}
+
+		.audit-panel {
+			width: 100%;
+			border-left: none;
+			border-top: 1px solid #333;
+			max-height: 30vh;
+		}
+
+		.audit-panel-collapsed {
+			width: 100%;
+			max-height: 36px;
+		}
+
+		/* Landing page */
+		.d-hero {
+			padding: 40px 16px;
+		}
+
+		.d-hero-title {
+			font-size: 28px;
+		}
+
+		.d-hero-sub {
+			font-size: 15px;
+		}
+
+		.d-hero-actions {
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.d-section {
+			padding: 32px 16px;
+		}
+
+		.d-section-title {
+			font-size: 24px;
+		}
+
+		.d-cards-2, .d-cards-3, .d-cards-4 {
+			grid-template-columns: 1fr;
+		}
+
+		.d-stats-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.d-stat-num {
+			font-size: 24px;
+		}
+
+		.d-footer-inner {
+			grid-template-columns: 1fr 1fr;
+			gap: 20px;
+			padding: 24px 16px;
+		}
+
+		.d-nav-inner {
+			padding: 10px 16px;
+			gap: 12px;
+		}
+
+		.d-nav-links {
+			gap: 12px;
+		}
+
+		.d-nav-links a {
+			font-size: 13px;
+		}
+
+		/* Dashboard */
+		.dash {
+			flex-direction: column;
+		}
+
+		.dash-sidebar {
+			width: 100%;
+			border-right: none;
+			border-bottom: 1px solid var(--border);
+		}
+
+		.dash-nav {
+			flex-direction: row;
+			overflow-x: auto;
+			padding: 4px 8px;
+		}
+
+		.dash-nav-item {
+			white-space: nowrap;
+			padding: 6px 10px;
+			font-size: 13px;
+		}
+
+		.dash-content {
+			padding: 12px;
+		}
+
+		.dash-stat-value {
+			font-size: 20px;
+		}
+
+		.dash-table {
+			font-size: 12px;
+		}
+
+		.dash-table th, .dash-table td {
+			padding: 6px;
+		}
+
+		/* Blog */
+		.blog-layout {
+			grid-template-columns: 1fr;
+			padding: 20px 16px;
+			gap: 24px;
+		}
+
+		.blog-title {
+			font-size: 24px;
+		}
+
+		.blog-meta {
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+
+		.blog-hero-img {
+			height: 160px;
+		}
+
+		.blog-body {
+			font-size: 15px;
+		}
+
+		.blog-body h2 {
+			font-size: 20px;
+		}
+	}
 </style>
