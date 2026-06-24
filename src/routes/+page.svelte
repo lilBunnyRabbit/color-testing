@@ -1,1123 +1,383 @@
 <script lang="ts">
-	import { base } from '$app/paths';
-	import { OKLCH, contrastRatio, contrastRatioAlpha, wcagLevels, wcagColor, simulateVision, visionSimulations, resolveGroups, type ColorGroup, type WcagLevel, type VisionSimulation } from '$lib/oklch';
+	import { evaluate, type EvalResult, type DSLValue } from '$lib/dsl/evaluator.js';
+	import { Color } from '$lib/dsl/color.js';
+	import Editor from '$lib/Editor.svelte';
 
-	type SchemeModule = { default: ColorGroup[] };
-	const modules = import.meta.glob<SchemeModule>('../lib/schemes/*.ts', { eager: true });
+	const EXAMPLES: Record<string, string> = {
+		'Simple': `// Try changing the brand color!
+brand = hex("#6c5ce7")
 
-	const schemes = Object.entries(modules).map(([path, mod]) => ({
-		name: path.split('/').pop()!.replace('.ts', ''),
-		groups: mod.default
-	}));
+bg = OKLCH(0.97, brand.ok_c * 0.15, brand.ok_h)
+fg = HSL(brand.h, 0.12, 0.18)
+muted = fg.lighten(0.45)
+surface = bg.darken(0.04)
 
-	let schemeIndex = $state(0);
-	let selected = $state<{ bgIdx: number; fgIdx: number } | null>(null);
-	let dialogEl = $state<HTMLDialogElement | null>(null);
-	let infoDialogEl = $state<HTMLDialogElement | null>(null);
+accent = brand.rotate(150)
+error = hex("#e74c3c")
+success = HSL(155, 0.6, 0.38)`,
 
-	let fgOpacityInput = $state(100);
-	let fgOpacity = $state(100);
-	let opacityTimer: ReturnType<typeof setTimeout>;
-	function onOpacityInput(e: Event) {
-		fgOpacityInput = +(e.target as HTMLInputElement).value;
-		clearTimeout(opacityTimer);
-		opacityTimer = setTimeout(() => { fgOpacity = fgOpacityInput; }, 150);
+		'Brand Dark': `// ── Source ──
+bg = OKLCH(0.255, 0.0233, 230.47)
+
+// ── Core ──
+fg = OKLCH(1 - bg.ok_l, bg.ok_c / 3, (bg.ok_h + 180) % 360)
+primary = OKLCH(fg.ok_l, bg.ok_c * 3, (fg.ok_h + 72) % 360)
+secondary = OKLCH(primary.ok_l, primary.ok_c, (primary.ok_h + 180) % 360)
+accent = OKLCH(primary.ok_l, primary.ok_c, fg.ok_h)
+
+// ── Background scale ──
+bg_lightest = bg.lighten(0.11)
+bg_lighter = bg.lighten(0.073)
+bg_light = bg.lighten(0.037)
+bg_dark = bg.darken(0.037)
+bg_darker = bg.darken(0.073)
+bg_darkest = bg.darken(0.11)
+
+// ── Semantic ──
+success = OKLCH(primary.ok_l, primary.ok_c * 2, 140)
+warning = OKLCH(primary.ok_l, primary.ok_c * 2, 70)
+error = OKLCH(primary.ok_l, primary.ok_c * 2, 30)
+info = OKLCH(primary.ok_l, primary.ok_c * 2, 240)
+
+// ── Harmony ──
+triad_a = primary.rotate(-120)
+triad_b = primary.rotate(120)
+split_a = primary.rotate(150)
+split_b = primary.rotate(210)`,
+	};
+
+	const exampleNames = Object.keys(EXAMPLES);
+
+	let currentExample = $state(exampleNames[0]);
+	let source = $state(EXAMPLES[currentExample]);
+	let result: EvalResult = $state(evaluate(source));
+
+	let debounceTimer: ReturnType<typeof setTimeout>;
+
+	function onInput() {
+		clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(() => {
+			result = evaluate(source);
+		}, 100);
 	}
-	const fgAlpha = $derived(fgOpacity / 100);
 
-	let visionSim = $state<VisionSimulation>('none');
+	function formatValue(val: DSLValue): string {
+		if (val instanceof Color) return val.hex;
+		if (typeof val === 'number') return String(Math.round(val * 10000) / 10000);
+		return String(val);
+	}
 
-	const resolvedGroups = $derived(resolveGroups(schemes[schemeIndex]?.groups ?? []));
-	const groups = $derived(
-		visionSim === 'none'
-			? resolvedGroups
-			: resolvedGroups.map((g) => ({
-					...g,
-					colors: g.colors.map((c) => simulateVision(c, visionSim))
-				}))
+	function formatOklch(val: DSLValue): string {
+		if (!(val instanceof Color)) return '';
+		const l = Math.round(val.ok_l * 1000) / 1000;
+		const c = Math.round(val.ok_c * 10000) / 10000;
+		const h = Math.round(val.ok_h * 100) / 100;
+		return `oklch(${l}, ${c}, ${h})`;
+	}
+
+	function textColor(val: DSLValue): string {
+		if (!(val instanceof Color)) return '#ccc';
+		return val.ok_l > 0.6 ? '#1a1a1a' : '#f0f0f0';
+	}
+
+	let colorVars = $derived(
+		result.order
+			.map((name) => result.variables.get(name)!)
+			.filter((v) => v.value instanceof Color)
 	);
-	const colors = $derived(groups.flatMap((g) => g.colors));
 
-	// Build grid column template: auto (row header) + for each group: repeat(n, 1fr), separated by 16px gaps
-	const colTemplate = $derived(
-		'auto ' + groups.map((g) => `repeat(${g.colors.length}, 1fr)`).join(' 6px ')
+	let nonColorVars = $derived(
+		result.order
+			.map((name) => result.variables.get(name)!)
+			.filter((v) => !(v.value instanceof Color))
 	);
 
-	// Track which flat index each group starts at
-	const groupStarts = $derived(() => {
-		const starts: number[] = [];
-		let idx = 0;
-		for (const g of groups) {
-			starts.push(idx);
-			idx += g.colors.length;
+	let showDocs = $state(false);
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape' && showDocs) {
+			showDocs = false;
 		}
-		return starts;
-	});
-
-	const sel = $derived(
-		selected && colors[selected.bgIdx] && colors[selected.fgIdx]
-			? { bg: colors[selected.bgIdx], fg: colors[selected.fgIdx] }
-			: null
-	);
-	const selRatio = $derived(sel ? contrastRatioAlpha(sel.fg, sel.bg, fgAlpha) : 0);
-	const selLevels = $derived(wcagLevels(selRatio));
-
-	function fmtOklch(color: { l: number; c: number; h: number }): string {
-		const fmt = (v: number, max: number) => {
-			const s = v.toFixed(max);
-			return s.includes('.') ? s.replace(/0+$/, '').replace(/\.$/, '') : s;
-		};
-		return `oklch(${fmt(color.l, 5)} ${fmt(color.c, 5)} ${fmt(color.h, 5)})`;
-	}
-
-	function selectCell(bgIdx: number, fgIdx: number) {
-		selected = { bgIdx, fgIdx };
-		dialogEl?.showModal();
-	}
-
-	function closeDialog() {
-		dialogEl?.close();
-		selected = null;
-	}
-
-	const markdownTable = $derived.by(() => {
-		const allColors = groups.flatMap((g) => g.colors);
-		if (!allColors.length) return '';
-
-		const rows = allColors.map((c) => ({
-			name: c.name,
-			hex: c.hex,
-			oklch: fmtOklch(c),
-			comment: c.description ?? '',
-		}));
-
-		const w = {
-			name: Math.max(4, ...rows.map((r) => r.name.length)),
-			hex: Math.max(3, ...rows.map((r) => r.hex.length)),
-			oklch: Math.max(5, ...rows.map((r) => r.oklch.length)),
-			comment: Math.max(7, ...rows.map((r) => r.comment.length)),
-		};
-
-		const pad = (s: string, len: number) => s + ' '.repeat(len - s.length);
-		const sep = `| ${'-'.repeat(w.name)} | ${'-'.repeat(w.hex)} | ${'-'.repeat(w.oklch)} | ${'-'.repeat(w.comment)} |`;
-		const header = `| ${pad('name', w.name)} | ${pad('hex', w.hex)} | ${pad('oklch', w.oklch)} | ${pad('comment', w.comment)} |`;
-		const body = rows.map((r) =>
-			`| ${pad(r.name, w.name)} | ${pad(r.hex, w.hex)} | ${pad(r.oklch, w.oklch)} | ${pad(r.comment, w.comment)} |`
-		);
-
-		return [header, sep, ...body].join('\n');
-	});
-
-	function copyMarkdown() {
-		navigator.clipboard.writeText(markdownTable);
 	}
 </script>
 
-<div class="app">
-	<!-- Header -->
-	<header class="app-header">
-		<h1 class="app-title">Color Scheme Tester</h1>
-		<select class="app-select" bind:value={schemeIndex}>
-			{#each schemes as scheme, i}
-				<option value={i}>{scheme.name}</option>
-			{/each}
-		</select>
-		<span class="app-count">{colors.length} colors</span>
-		<button class="app-info-btn" onclick={() => infoDialogEl?.showModal()}>Scheme Info</button>
-		<a href="{base}/demo" class="app-info-btn" style="text-decoration: none">Demo</a>
+<svelte:window onkeydown={handleKeydown} />
 
-		<label class="app-opacity">
-			<span>fg opacity: {fgOpacityInput}%</span>
-			<input type="range" min="0" max="100" value={fgOpacityInput} oninput={onOpacityInput} />
-		</label>
+<svelte:head>
+	<title>Chromatics DSL</title>
+</svelte:head>
 
-		<select class="app-select" bind:value={visionSim}>
-			{#each visionSimulations as sim}
-				<option value={sim.value}>{sim.label}</option>
-			{/each}
-		</select>
-
-		<div class="app-swatches">
-			{#each colors as color}
-				<div
-					class="app-swatch"
-					style="background: {color.toCSS()}"
-					title="{color.name} ({color.hex})"
-				></div>
-			{/each}
+<div class="flex h-screen bg-[#0e0e10] text-[#c8c8d0]">
+	<!-- Editor Panel -->
+	<div class="flex w-1/2 flex-col border-r border-[#2a2a30]">
+		<div class="flex items-center gap-2 border-b border-[#2a2a30] px-4 py-2">
+			<h1 class="text-sm font-semibold tracking-wide text-[#8888a0]">EDITOR</h1>
+			<select
+				class="rounded bg-[#18181b] px-2 py-0.5 text-xs text-[#8888a0] outline-none"
+				bind:value={currentExample}
+				onchange={() => {
+					source = EXAMPLES[currentExample];
+					result = evaluate(source);
+				}}
+			>
+				{#each exampleNames as name}
+					<option value={name}>{name}</option>
+				{/each}
+			</select>
+			{#if result.errors.length > 0}
+				<span class="rounded bg-red-900/40 px-2 py-0.5 text-xs text-red-400">
+					{result.errors.length} error{result.errors.length > 1 ? 's' : ''}
+				</span>
+			{/if}
+			<div class="flex-1"></div>
+			<button
+				class="rounded px-2 py-0.5 text-xs text-[#8888a0] transition-colors hover:bg-[#2a2a30] hover:text-[#c8c8d0]"
+				class:bg-[#2a2a30]={showDocs}
+				class:text-[#c8c8d0]={showDocs}
+				onclick={() => (showDocs = !showDocs)}
+			>
+				API Docs
+			</button>
 		</div>
-	</header>
 
-	<!-- Matrix -->
-	<div class="matrix-scroll">
-		<div class="matrix-grid" style="grid-template-columns: {colTemplate}">
-			<!-- Corner -->
-			<div class="matrix-corner">fg &#x2193; &nbsp; bg &#x2192;</div>
+		<div class="relative flex-1 overflow-hidden">
+			<Editor bind:value={source} onchange={onInput} />
 
-			<!-- Column headers (bg) with group separators -->
-			{#each groups as colGroup, cgi}
-				{#if cgi > 0}
-					<div class="matrix-col-sep"></div>
-				{/if}
-				{#each colGroup.colors as bg, ci}
-					<div class="matrix-col-header">
-						<span class="header-name" title={bg.name}>{bg.name}</span>
-						<span class="header-hex">{bg.hex}</span>
-						<span class="header-oklch">{fmtOklch(bg)}</span>
-						<div class="header-swatch-wide" style="background: {bg.toCSS()}"></div>
-					</div>
-				{/each}
-			{/each}
+			<!-- API Docs overlay -->
+			{#if showDocs}
+				<div class="absolute inset-0 overflow-y-auto bg-[#0e0e10]/95 p-5 backdrop-blur-sm">
+					<div class="mx-auto max-w-xl space-y-5 text-sm">
+						<!-- Constructors -->
+						<section>
+							<h2 class="mb-2 text-xs font-semibold tracking-wide text-[#8888a0]">CONSTRUCTORS</h2>
+							<div class="space-y-1 font-mono text-xs">
+								<div><span class="text-amber-400">HSL</span><span class="text-[#666]">(h: 0-360, s: 0-1, l: 0-1)</span> <span class="text-[#555]">&#8594; Color</span></div>
+								<div><span class="text-amber-400">RGB</span><span class="text-[#666]">(r: 0-1, g: 0-1, b: 0-1)</span> <span class="text-[#555]">&#8594; Color</span></div>
+								<div><span class="text-amber-400">OKLCH</span><span class="text-[#666]">(l: 0-1, c: 0-0.4, h: 0-360)</span> <span class="text-[#555]">&#8594; Color</span></div>
+								<div><span class="text-amber-400">hex</span><span class="text-[#666]">(str: "#rrggbb")</span> <span class="text-[#555]">&#8594; Color</span></div>
+							</div>
+						</section>
 
-			<!-- Rows (fg) with group separators -->
-			{#each groups as rowGroup, rgi}
-				<!-- Row group separator -->
-				{#if rgi > 0}
-					<div class="matrix-row-sep" style="grid-column: 1 / -1">
-						<span class="sep-label">{rowGroup.label}</span>
-					</div>
-				{/if}
+						<!-- Color Properties -->
+						<section>
+							<h2 class="mb-2 text-xs font-semibold tracking-wide text-[#8888a0]">COLOR PROPERTIES</h2>
+							<div class="grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-xs">
+								<div class="col-span-2 mb-1 text-[#555]">OKLCH</div>
+								<div><span class="text-sky-400">.ok_l</span> <span class="text-[#555]">lightness 0-1</span></div>
+								<div><span class="text-sky-400">.ok_c</span> <span class="text-[#555]">chroma 0-0.4</span></div>
+								<div><span class="text-sky-400">.ok_h</span> <span class="text-[#555]">hue 0-360</span></div>
+								<div></div>
+								<div class="col-span-2 mb-1 mt-2 text-[#555]">HSL</div>
+								<div><span class="text-sky-400">.h</span> <span class="text-[#555]">hue 0-360</span></div>
+								<div><span class="text-sky-400">.s</span> <span class="text-[#555]">saturation 0-1</span></div>
+								<div><span class="text-sky-400">.l</span> <span class="text-[#555]">lightness 0-1</span></div>
+								<div></div>
+								<div class="col-span-2 mb-1 mt-2 text-[#555]">RGB</div>
+								<div><span class="text-sky-400">.r</span> <span class="text-[#555]">red 0-1</span></div>
+								<div><span class="text-sky-400">.g</span> <span class="text-[#555]">green 0-1</span></div>
+								<div><span class="text-sky-400">.b</span> <span class="text-[#555]">blue 0-1</span></div>
+								<div></div>
+								<div class="col-span-2 mb-1 mt-2 text-[#555]">Output</div>
+								<div><span class="text-sky-400">.hex</span> <span class="text-[#555]">"#rrggbb"</span></div>
+								<div><span class="text-sky-400">.inGamut</span> <span class="text-[#555]">bool (sRGB)</span></div>
+								<div><span class="text-sky-400">.inP3</span> <span class="text-[#555]">bool (Display P3)</span></div>
+								<div><span class="text-sky-400">.gamutMapped</span> <span class="text-[#555]">Color (clamped)</span></div>
+							</div>
+						</section>
 
-				{#each rowGroup.colors as fg, localFi}
-					{@const fgIdx = groups.slice(0, rgi).reduce((s, g) => s + g.colors.length, 0) + localFi}
-					<!-- Row header -->
-					<div class="matrix-row-header">
-						<div class="row-header-text">
-							<div class="header-name" title={fg.name}>{fg.name}</div>
-							<div class="header-hex">{fg.hex}</div>
-							<div class="header-oklch">{fmtOklch(fg)}</div>
-						</div>
-						<div class="row-header-swatch" style="background: {fg.toCSS()}"></div>
-					</div>
+						<!-- Color Methods -->
+						<section>
+							<h2 class="mb-2 text-xs font-semibold tracking-wide text-[#8888a0]">COLOR METHODS</h2>
+							<div class="space-y-1 font-mono text-xs">
+								<div><span class="text-emerald-400">.lighten</span><span class="text-[#666]">(amount)</span> <span class="text-[#555]">&#8594; Color &mdash; increase OKLCH lightness</span></div>
+								<div><span class="text-emerald-400">.darken</span><span class="text-[#666]">(amount)</span> <span class="text-[#555]">&#8594; Color &mdash; decrease OKLCH lightness</span></div>
+								<div><span class="text-emerald-400">.saturate</span><span class="text-[#666]">(amount)</span> <span class="text-[#555]">&#8594; Color &mdash; increase OKLCH chroma</span></div>
+								<div><span class="text-emerald-400">.desaturate</span><span class="text-[#666]">(amount)</span> <span class="text-[#555]">&#8594; Color &mdash; decrease OKLCH chroma</span></div>
+								<div><span class="text-emerald-400">.rotate</span><span class="text-[#666]">(degrees)</span> <span class="text-[#555]">&#8594; Color &mdash; shift hue</span></div>
+								<div><span class="text-emerald-400">.invert</span><span class="text-[#666]">()</span> <span class="text-[#555]">&#8594; Color &mdash; flip lightness + rotate 180</span></div>
+								<div><span class="text-emerald-400">.complement</span><span class="text-[#666]">()</span> <span class="text-[#555]">&#8594; Color &mdash; rotate 180</span></div>
+								<div><span class="text-emerald-400">.mix</span><span class="text-[#666]">(other, ratio?)</span> <span class="text-[#555]">&#8594; Color &mdash; blend in OKLCH, ratio 0-1 (default 0.5)</span></div>
+								<div><span class="text-emerald-400">.shift</span><span class="text-[#666]">(&#123;l?, c?, h?&#125;)</span> <span class="text-[#555]">&#8594; Color &mdash; add deltas to OKLCH channels</span></div>
+								<div><span class="text-emerald-400">.derive</span><span class="text-[#666]">(&#123;l?, c?, h?&#125;)</span> <span class="text-[#555]">&#8594; Color &mdash; replace OKLCH channels</span></div>
+								<div><span class="text-emerald-400">.contrast</span><span class="text-[#666]">(other)</span> <span class="text-[#555]">&#8594; number &mdash; WCAG contrast ratio</span></div>
+							</div>
+						</section>
 
-					<!-- Cells across all column groups (bg) -->
-					{#each groups as colGroup, cgi}
-						{#if cgi > 0}
-							<div class="matrix-cell-sep"></div>
-						{/if}
-						{#each colGroup.colors as bg, localBi}
-							{@const bgIdx = groups.slice(0, cgi).reduce((s, g) => s + g.colors.length, 0) + localBi}
-							{#if bgIdx === fgIdx}
-								<div style="background: {bg.toCSS()}"></div>
-							{:else}
-								{@const ratio = contrastRatioAlpha(fg, bg, fgAlpha)}
-								{@const levels = wcagLevels(ratio)}
-								<!-- svelte-ignore a11y_click_events_have_key_events -->
-								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<div
-									class="matrix-cell"
-									class:matrix-cell-fail={levels.normal === 'Fail'}
-									style="background: {bg.toCSS()}; color: {fg.toCSS()}; --fg-alpha: {fgAlpha}"
-									title="{bg.name} bg + {fg.name} fg - {ratio.toFixed(2)}:1 ({levels.normal} / {levels.large})"
-									onclick={() => selectCell(bgIdx, fgIdx)}
-								>
-									<div class="cell-content">
-										<div class="cell-header">
-											<span class="cell-ratio">{ratio.toFixed(2)}</span>
-											<span class="cell-wcag">{levels.normal}</span>
-										</div>
-										<div class="cell-text-lg">Heading</div>
-										<div class="cell-text-md">Body text sample</div>
-										<div class="cell-text-sm">Thin caption</div>
-										<div class="cell-line" style="background: {fg.toCSS()}"></div>
-										<div class="cell-shapes">
-											<div class="cell-dot" style="background: {fg.toCSS()}"></div>
-											<div class="cell-ring" style="border-color: {fg.toCSS()}"></div>
-											<div class="cell-bar" style="background: {fg.toCSS()}"></div>
-										</div>
-									</div>
+						<!-- Functions -->
+						<section>
+							<h2 class="mb-2 text-xs font-semibold tracking-wide text-[#8888a0]">FUNCTIONS</h2>
+							<div class="space-y-1 font-mono text-xs">
+								<div><span class="text-violet-400">mix</span><span class="text-[#666]">(a, b, ratio)</span> <span class="text-[#555]">&#8594; Color</span></div>
+								<div><span class="text-violet-400">contrast</span><span class="text-[#666]">(a, b)</span> <span class="text-[#555]">&#8594; number</span></div>
+								<div><span class="text-violet-400">clamp</span><span class="text-[#666]">(val, min, max)</span> <span class="text-[#555]">&#8594; number</span></div>
+								<div><span class="text-violet-400">abs</span> <span class="text-violet-400">min</span> <span class="text-violet-400">max</span> <span class="text-violet-400">round</span> <span class="text-violet-400">floor</span> <span class="text-violet-400">ceil</span> <span class="text-[#555]">&mdash; standard math</span></div>
+							</div>
+						</section>
+
+						<!-- Operators -->
+						<section>
+							<h2 class="mb-2 text-xs font-semibold tracking-wide text-[#8888a0]">OPERATORS</h2>
+							<div class="font-mono text-xs text-[#666]">
+								<span class="text-[#999]">+</span> <span class="text-[#999]">-</span> <span class="text-[#999]">*</span> <span class="text-[#999]">/</span> <span class="text-[#999]">%</span> <span class="text-[#999]">**</span>
+								&nbsp;&nbsp;
+								<span class="text-[#999]">&lt;</span> <span class="text-[#999]">&gt;</span> <span class="text-[#999]">&lt;=</span> <span class="text-[#999]">&gt;=</span> <span class="text-[#999]">==</span> <span class="text-[#999]">!=</span>
+								&nbsp;&nbsp;
+								<span class="text-[#999]">&&</span> <span class="text-[#999]">||</span> <span class="text-[#999]">!</span>
+								&nbsp;&nbsp;
+								<span class="text-[#999]">? :</span> <span class="text-[#555]">(ternary)</span>
+							</div>
+						</section>
+
+						<!-- Examples -->
+						<section>
+							<h2 class="mb-2 text-xs font-semibold tracking-wide text-[#8888a0]">EXAMPLES</h2>
+							<div class="space-y-2 font-mono text-xs">
+								<div class="rounded bg-[#18181b] p-2">
+									<div class="text-[#d4d4d8]">bg = OKLCH(0.25, 0.02, 230)</div>
+									<div class="text-[#555]">// dark teal background</div>
 								</div>
-							{/if}
-						{/each}
-					{/each}
+								<div class="rounded bg-[#18181b] p-2">
+									<div class="text-[#d4d4d8]">fg = bg.invert()</div>
+									<div class="text-[#555]">// auto foreground from background</div>
+								</div>
+								<div class="rounded bg-[#18181b] p-2">
+									<div class="text-[#d4d4d8]">accent = HSL(280, 0.6, 0.5)</div>
+									<div class="text-[#555]">// purple accent via HSL</div>
+								</div>
+								<div class="rounded bg-[#18181b] p-2">
+									<div class="text-[#d4d4d8]">warm = bg.mix(accent, 0.1)</div>
+									<div class="text-[#555]">// subtle tinted surface</div>
+								</div>
+								<div class="rounded bg-[#18181b] p-2">
+									<div class="text-[#d4d4d8]">cr = fg.contrast(bg)</div>
+									<div class="text-[#555]">// WCAG contrast ratio (number)</div>
+								</div>
+							</div>
+						</section>
+
+						<div class="pt-2 text-center text-xs text-[#444]">
+							Press <kbd class="rounded bg-[#2a2a30] px-1.5 py-0.5">Esc</kbd> or click API Docs to close
+						</div>
+					</div>
+				</div>
+			{/if}
+		</div>
+
+		<!-- Errors -->
+		{#if result.errors.length > 0}
+			<div class="border-t border-[#2a2a30] bg-red-950/20 px-4 py-2">
+				{#each result.errors as err}
+					<div class="flex gap-2 text-xs">
+						<span class="text-red-500">line {err.line}:</span>
+						<span class="text-red-400">{err.message}</span>
+					</div>
 				{/each}
-			{/each}
+			</div>
+		{/if}
+	</div>
+
+	<!-- Inspector Panel -->
+	<div class="flex w-1/2 flex-col">
+		<div class="flex items-center gap-2 border-b border-[#2a2a30] px-4 py-2">
+			<h1 class="text-sm font-semibold tracking-wide text-[#8888a0]">INSPECTOR</h1>
+			<span class="text-xs text-[#555]">
+				{colorVars.length} color{colorVars.length !== 1 ? 's' : ''}
+			</span>
+		</div>
+
+		<div class="flex-1 overflow-y-auto p-4">
+			<!-- Color Variables -->
+			{#if colorVars.length > 0}
+				<div class="grid gap-2">
+					{#each colorVars as v}
+						{@const c = v.value as Color}
+						<div class="flex items-stretch gap-3 rounded-lg bg-[#18181b] p-3">
+							<!-- Color swatch -->
+							<div
+								class="flex w-20 shrink-0 items-center justify-center rounded-md text-xs font-mono"
+								style="background-color: {c.hex}; color: {textColor(c)}"
+							>
+								{c.hex}
+							</div>
+
+							<!-- Info -->
+							<div class="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+								<div class="flex items-center gap-2">
+									<span class="font-mono text-sm font-semibold text-[#e4e4e8]">{v.name}</span>
+									{#if !c.inGamut}
+										<span
+											class="rounded bg-yellow-900/40 px-1.5 py-0.5 text-[10px] text-yellow-400"
+											>out of gamut</span
+										>
+									{/if}
+								</div>
+								<span class="font-mono text-xs text-[#666]">{formatOklch(c)}</span>
+								{#if v.deps.length > 0}
+									<span class="text-xs text-[#555]">
+										depends on: {v.deps.join(', ')}
+									</span>
+								{/if}
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
+
+			<!-- Non-color Variables -->
+			{#if nonColorVars.length > 0}
+				<div class="mt-4">
+					<h2 class="mb-2 text-xs font-semibold tracking-wide text-[#555]">VALUES</h2>
+					<div class="grid gap-1">
+						{#each nonColorVars as v}
+							<div class="flex items-center gap-2 rounded bg-[#18181b] px-3 py-1.5">
+								<span class="font-mono text-sm text-[#e4e4e8]">{v.name}</span>
+								<span class="font-mono text-xs text-[#888]">= {formatValue(v.value)}</span>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
+			<!-- Preview -->
+			{#if colorVars.length >= 2}
+				{@const bg = colorVars.find((v) => v.name.includes('bg') || v.name === 'background')}
+				{@const fg = colorVars.find(
+					(v) => v.name.includes('fg') || v.name === 'foreground' || v.name === 'muted'
+				)}
+				{@const pri = colorVars.find(
+					(v) => v.name === 'primary' || v.name === 'accent'
+				)}
+
+				{#if bg && fg}
+					<div class="mt-6">
+						<h2 class="mb-2 text-xs font-semibold tracking-wide text-[#555]">PREVIEW</h2>
+						<div
+							class="overflow-hidden rounded-lg p-6"
+							style="background-color: {(bg.value as Color).hex}; color: {(fg.value as Color).hex}"
+						>
+							<h3
+								class="mb-2 text-lg font-bold"
+								style={pri ? `color: ${(pri.value as Color).hex}` : ''}
+							>
+								Theme Preview
+							</h3>
+							<p class="mb-4 text-sm opacity-80">
+								This preview uses your defined colors to show how they work together.
+							</p>
+							<div class="flex gap-2">
+								{#each colorVars.filter((v) => !v.name.startsWith('bg') && v.name !== 'background' && !v.name.startsWith('fg') && v.name !== 'foreground' && v.name !== 'muted') as cv}
+									<div
+										class="rounded-md px-3 py-1.5 text-xs font-medium"
+										style="background-color: {(cv.value as Color).hex}; color: {textColor(cv.value)}"
+									>
+										{cv.name}
+									</div>
+								{/each}
+							</div>
+						</div>
+					</div>
+				{/if}
+			{/if}
 		</div>
 	</div>
 </div>
-
-<!-- Detail Modal -->
-<dialog
-	bind:this={dialogEl}
-	class="detail-dialog"
-	onclick={(e) => { if (e.target === dialogEl) closeDialog(); }}
-	onclose={() => (selected = null)}
->
-	{#if sel}
-		<div class="dialog-inner">
-			<div class="dialog-info-bar">
-				<div class="dialog-color-info">
-					<div class="dialog-swatch" style="background: {sel.bg.toCSS()}"></div>
-					<div>
-						<div class="dialog-color-name">{sel.bg.name}</div>
-						<div class="dialog-color-value">{sel.bg.hex} &middot; {sel.bg.toCSS()}</div>
-					</div>
-				</div>
-				<span class="dialog-on">on</span>
-				<div class="dialog-color-info">
-					<div class="dialog-swatch" style="background: {sel.fg.toCSS()}"></div>
-					<div>
-						<div class="dialog-color-name">{sel.fg.name}</div>
-						<div class="dialog-color-value">{sel.fg.hex} &middot; {sel.fg.toCSS()}</div>
-					</div>
-				</div>
-
-				<div class="dialog-stats">
-					<div class="dialog-stat">
-						<div class="dialog-ratio">{selRatio.toFixed(2)}:1</div>
-						<div class="dialog-stat-label">Contrast Ratio</div>
-					</div>
-					<div class="dialog-stat">
-						<div class="dialog-badge" style="background: {wcagColor(selLevels.normal)}">
-							{selLevels.normal}
-						</div>
-						<div class="dialog-stat-label">Normal Text</div>
-					</div>
-					<div class="dialog-stat">
-						<div class="dialog-badge" style="background: {wcagColor(selLevels.large)}">
-							{selLevels.large}
-						</div>
-						<div class="dialog-stat-label">Large Text</div>
-					</div>
-					<button class="dialog-close" onclick={closeDialog}>Close</button>
-				</div>
-			</div>
-
-			<div class="dialog-preview" style="background: {sel.bg.toCSS()}; color: {sel.fg.toCSS()}">
-				<div class="dialog-preview-grid">
-					<!-- Typography -->
-					<div class="dialog-section">
-						<h3 class="dialog-section-title">Font Weights</h3>
-						{#each [
-							[100, 'Thin'], [200, 'Extra Light'], [300, 'Light'],
-							[400, 'Regular'], [500, 'Medium'], [600, 'Semibold'],
-							[700, 'Bold'], [800, 'Extra Bold'], [900, 'Black']
-						] as [weight, label]}
-							<p style="font-weight: {weight}" class="dialog-weight-line">
-								<span class="dialog-weight-label">{weight} {label}</span>
-								The quick brown fox jumps over the lazy dog
-							</p>
-						{/each}
-
-						<h3 class="dialog-section-title" style="margin-top: 20px">Font Sizes</h3>
-						<div class="dialog-sizes">
-							{#each [10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48] as size}
-								<span style="font-size: {size}px">{size}px</span>
-							{/each}
-						</div>
-
-						<h3 class="dialog-section-title" style="margin-top: 20px">Text Styles</h3>
-						<p style="font-style: italic">Italic - The quick brown fox jumps over the lazy dog</p>
-						<p style="text-decoration: underline">Underlined text sample</p>
-						<p style="text-decoration: line-through">Strikethrough text sample</p>
-						<p style="text-transform: uppercase; letter-spacing: 0.05em; font-size: 14px">Uppercase tracked text</p>
-					</div>
-
-					<!-- UI Elements -->
-					<div class="dialog-section">
-						<h3 class="dialog-section-title">Lines & Borders</h3>
-						<hr style="border-color: {sel.fg.toCSS()}; border-top-width: 1px; opacity: 1" />
-						<hr style="border-color: {sel.fg.toCSS()}; border-top-width: 2px; opacity: 1" />
-						<hr style="border-color: {sel.fg.toCSS()}; border-top-width: 1px; opacity: 0.5" />
-
-						<div class="dialog-box" style="border: 1px solid {sel.fg.toCSS()}">
-							Bordered container with text content
-						</div>
-						<div class="dialog-box" style="border: 2px solid {sel.fg.toCSS()}">
-							Thick bordered container
-						</div>
-
-						<h3 class="dialog-section-title" style="margin-top: 20px">UI Elements</h3>
-						<div class="dialog-ui-row">
-							<button class="dialog-btn-filled" style="background: {sel.fg.toCSS()}; color: {sel.bg.toCSS()}">Filled Button</button>
-							<button class="dialog-btn-outline" style="border-color: {sel.fg.toCSS()}; color: {sel.fg.toCSS()}">Outlined Button</button>
-							<span class="dialog-badge-ui" style="background: {sel.fg.toCSS()}; color: {sel.bg.toCSS()}">Badge</span>
-							<span style="text-decoration: underline; font-size: 14px">Link Text</span>
-						</div>
-
-						<h3 class="dialog-section-title" style="margin-top: 20px">Blocks</h3>
-						<div class="dialog-box" style="background: {sel.fg.toCSS()}; color: {sel.bg.toCSS()}; border: none">
-							Inverted block - foreground as background, background as text. Shows the reverse combination for emphasis areas, buttons, or highlights.
-						</div>
-
-						<p style="font-size: 14px; line-height: 1.6">
-							Full opacity: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-						</p>
-						<p style="font-size: 14px; line-height: 1.6; opacity: 0.65">
-							Muted (65%): Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-						</p>
-						<p style="font-size: 14px; line-height: 1.6; opacity: 0.38">
-							Disabled (38%): Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-						</p>
-
-						<h3 class="dialog-section-title" style="margin-top: 20px">Shapes</h3>
-						<div class="dialog-shapes">
-							<div style="width:16px;height:16px;border-radius:50%;background:{sel.fg.toCSS()}"></div>
-							<div style="width:16px;height:16px;background:{sel.fg.toCSS()}"></div>
-							<div style="width:16px;height:16px;border-radius:50%;border:2px solid {sel.fg.toCSS()}"></div>
-							<div style="width:16px;height:16px;border:2px solid {sel.fg.toCSS()}"></div>
-							<div style="width:24px;height:24px;border-radius:50%;background:{sel.fg.toCSS()}"></div>
-							<div style="width:24px;height:24px;background:{sel.fg.toCSS()}"></div>
-							<div style="width:32px;height:32px;border-radius:50%;background:{sel.fg.toCSS()}"></div>
-							<div style="height:4px;width:64px;background:{sel.fg.toCSS()}"></div>
-							<div style="height:2px;width:64px;background:{sel.fg.toCSS()}"></div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	{/if}
-</dialog>
-
-<!-- Scheme Info Dialog -->
-<dialog
-	bind:this={infoDialogEl}
-	class="info-dialog"
-	onclick={(e) => { if (e.target === infoDialogEl) infoDialogEl?.close(); }}
->
-	<div class="info-inner">
-		<div class="info-header">
-			<h2 class="info-title">Scheme: {schemes[schemeIndex]?.name}</h2>
-			<button class="info-copy-btn" onclick={copyMarkdown}>Copy Markdown</button>
-			<button class="dialog-close" onclick={() => infoDialogEl?.close()}>Close</button>
-		</div>
-		<div class="info-body">
-			{#each groups as group, gi}
-				<div class="info-group-label">{group.label}</div>
-				{#each group.colors as color}
-					<div class="info-color-row">
-						<div class="info-color-swatch" style="background: {color.toCSS()}"></div>
-						<div class="info-color-details">
-							<div class="info-color-name">{color.name}</div>
-							<div class="info-color-values">
-								<span class="info-value">{color.hex}</span>
-								<span class="info-value">{fmtOklch(color)}</span>
-								{#if !color.isInGamut}
-									<span class="info-oog">out of sRGB (mapped: {color.gamutMapped.hex})</span>
-								{:else if color.isInP3}
-									<span class="info-p3">P3</span>
-								{/if}
-							</div>
-							{#if color.description}
-								<div class="info-description">{color.description}</div>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			{/each}
-			<div class="info-markdown">
-				<pre class="info-markdown-pre">{markdownTable}</pre>
-			</div>
-		</div>
-	</div>
-</dialog>
-
-<style>
-	/* App chrome - pure black/white */
-	.app {
-		display: flex;
-		flex-direction: column;
-		height: 100vh;
-		background: #000;
-		color: #fff;
-	}
-
-	.app-header {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-		padding: 12px 20px;
-		border-bottom: 1px solid #333;
-		flex-shrink: 0;
-	}
-
-	.app-title {
-		font-size: 18px;
-		font-weight: 600;
-		letter-spacing: -0.02em;
-	}
-
-	.app-select {
-		border: 1px solid #555;
-		border-radius: 4px;
-		background: #111;
-		color: #fff;
-		padding: 4px 8px;
-		font-size: 14px;
-	}
-
-	.app-count {
-		font-size: 12px;
-		color: #888;
-	}
-
-	.app-info-btn {
-		padding: 4px 12px;
-		border: 1px solid #555;
-		border-radius: 4px;
-		background: none;
-		color: #fff;
-		font-size: 13px;
-		cursor: pointer;
-	}
-
-	.app-info-btn:hover {
-		border-color: #999;
-	}
-
-	.app-opacity {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		font-size: 12px;
-		color: #ccc;
-	}
-
-	.app-opacity input[type='range'] {
-		width: 100px;
-	}
-
-	.app-swatches {
-		margin-left: auto;
-		display: flex;
-		gap: 4px;
-		overflow: hidden;
-		min-width: 0;
-		flex-shrink: 1;
-	}
-
-	.app-swatch {
-		width: 24px;
-		height: 24px;
-		border-radius: 4px;
-		border: 1px solid #333;
-		flex-shrink: 0;
-	}
-
-	/* Matrix */
-	.matrix-scroll {
-		flex: 1;
-		min-height: 0;
-		overflow: auto;
-	}
-
-	.matrix-grid {
-		display: grid;
-		gap: 2px;
-		width: max-content;
-	}
-
-	.matrix-corner {
-		position: sticky;
-		top: 0;
-		left: 0;
-		z-index: 30;
-		background: #000;
-		padding: 8px;
-		font-size: 11px;
-		color: #666;
-		display: flex;
-		align-items: end;
-	}
-
-	.matrix-col-header {
-		position: sticky;
-		top: 0;
-		z-index: 20;
-		background: #000;
-		padding: 4px 0 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 2px;
-	}
-
-	.matrix-row-header {
-		position: sticky;
-		left: 0;
-		z-index: 10;
-		background: #000;
-		padding: 0;
-		display: flex;
-		flex-direction: row;
-		align-items: stretch;
-		min-width: 9rem;
-	}
-
-	.header-swatch-wide {
-		width: 100%;
-		height: 12px;
-		flex-shrink: 0;
-	}
-
-	.row-header-swatch {
-		width: 12px;
-		flex-shrink: 0;
-	}
-
-	.row-header-text {
-		padding: 4px 8px 6px;
-		flex: 1;
-		min-width: 0;
-	}
-
-	.header-name {
-		font-size: 11px;
-		color: #ccc;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		width: 11rem;
-		text-align: center;
-	}
-
-	.row-header-text .header-name {
-		text-align: left;
-		width: auto;
-	}
-
-	.header-hex {
-		font-family: monospace;
-		font-size: 9px;
-		color: #888;
-	}
-
-	.header-oklch {
-		font-family: monospace;
-		font-size: 9px;
-		color: #555;
-	}
-
-	.matrix-cell {
-		cursor: pointer;
-	}
-
-	.matrix-cell-fail {
-		clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
-	}
-
-	/* Cell content */
-	.cell-content {
-		width: 11rem;
-		padding: 6px 8px;
-		display: flex;
-		flex-direction: column;
-		gap: 3px;
-		overflow: hidden;
-		opacity: var(--fg-alpha, 1);
-	}
-
-	.cell-header {
-		display: flex;
-		align-items: baseline;
-		gap: 4px;
-		font-family: monospace;
-	}
-
-	.cell-ratio {
-		font-size: 11px;
-		font-weight: 700;
-	}
-
-	.cell-wcag {
-		font-size: 9px;
-		font-weight: 700;
-		opacity: 0.7;
-	}
-
-	.cell-text-lg {
-		font-size: 15px;
-		font-weight: 700;
-		line-height: 1.1;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.cell-text-md {
-		font-size: 11px;
-		font-weight: 400;
-		line-height: 1.2;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.cell-text-sm {
-		font-size: 9px;
-		font-weight: 200;
-		line-height: 1.2;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.cell-line {
-		height: 1px;
-	}
-
-	.cell-shapes {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-	}
-
-	.cell-dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		flex-shrink: 0;
-	}
-
-	.cell-ring {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		border: 1.5px solid;
-		flex-shrink: 0;
-	}
-
-	.cell-bar {
-		height: 6px;
-		flex: 1;
-		border-radius: 3px;
-		min-width: 0;
-	}
-
-	/* Dialog */
-	.detail-dialog {
-		padding: 0;
-		border: none;
-		border-radius: 12px;
-		max-width: 90vw;
-		max-height: 90vh;
-		width: 900px;
-		overflow: hidden;
-		background: transparent;
-		color: inherit;
-		margin: auto;
-	}
-
-	.detail-dialog::backdrop {
-		background: rgba(0, 0, 0, 0.7);
-	}
-
-	.dialog-inner {
-		display: flex;
-		flex-direction: column;
-		max-height: 90vh;
-	}
-
-	.dialog-info-bar {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 16px;
-		padding: 12px 20px;
-		background: #000;
-		color: #fff;
-		font-size: 14px;
-	}
-
-	.dialog-color-info {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-	}
-
-	.dialog-swatch {
-		width: 28px;
-		height: 28px;
-		border-radius: 4px;
-		border: 1px solid #333;
-	}
-
-	.dialog-color-name {
-		font-weight: 500;
-	}
-
-	.dialog-color-value {
-		font-family: monospace;
-		font-size: 11px;
-		color: #888;
-	}
-
-	.dialog-on {
-		color: #666;
-	}
-
-	.dialog-stats {
-		margin-left: auto;
-		display: flex;
-		align-items: center;
-		gap: 20px;
-	}
-
-	.dialog-stat {
-		text-align: center;
-	}
-
-	.dialog-ratio {
-		font-family: monospace;
-		font-size: 20px;
-		font-weight: 700;
-	}
-
-	.dialog-stat-label {
-		font-size: 10px;
-		color: #888;
-	}
-
-	.dialog-badge {
-		color: #000;
-		font-weight: 700;
-		font-size: 14px;
-		padding: 2px 8px;
-		border-radius: 4px;
-	}
-
-	.dialog-close {
-		margin-left: 8px;
-		padding: 6px 12px;
-		border-radius: 4px;
-		color: #888;
-		background: none;
-		border: 1px solid #333;
-		cursor: pointer;
-	}
-
-	.dialog-close:hover {
-		color: #fff;
-		border-color: #666;
-	}
-
-	.dialog-preview {
-		overflow: auto;
-		flex: 1;
-		min-height: 0;
-	}
-
-	.dialog-preview-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 32px;
-		padding: 32px;
-	}
-
-	.dialog-section {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-	}
-
-	.dialog-section-title {
-		font-size: 10px;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		opacity: 0.5;
-		margin-bottom: 4px;
-	}
-
-	.dialog-weight-line {
-		font-size: 14px;
-		line-height: 1.3;
-	}
-
-	.dialog-weight-label {
-		display: inline-block;
-		width: 96px;
-		font-family: monospace;
-		font-size: 10px;
-		opacity: 0.4;
-	}
-
-	.dialog-sizes {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 12px;
-	}
-
-	.dialog-box {
-		border-radius: 6px;
-		padding: 12px;
-		font-size: 14px;
-	}
-
-	.dialog-ui-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-		align-items: center;
-	}
-
-	.dialog-btn-filled {
-		padding: 6px 12px;
-		border-radius: 4px;
-		font-size: 14px;
-		font-weight: 500;
-		border: none;
-		cursor: pointer;
-	}
-
-	.dialog-btn-outline {
-		padding: 6px 12px;
-		border-radius: 4px;
-		font-size: 14px;
-		font-weight: 500;
-		border: 1px solid;
-		background: none;
-		cursor: pointer;
-	}
-
-	.dialog-badge-ui {
-		padding: 2px 10px;
-		border-radius: 99px;
-		font-size: 12px;
-		font-weight: 600;
-	}
-
-	.dialog-shapes {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		flex-wrap: wrap;
-	}
-
-	/* Info dialog */
-	.info-dialog {
-		padding: 0;
-		border: none;
-		border-radius: 12px;
-		max-width: 700px;
-		max-height: 90vh;
-		width: 90vw;
-		overflow: hidden;
-		background: #000;
-		color: #fff;
-		margin: auto;
-	}
-
-	.info-dialog::backdrop {
-		background: rgba(0, 0, 0, 0.7);
-	}
-
-	.info-inner {
-		display: flex;
-		flex-direction: column;
-		max-height: 90vh;
-	}
-
-	.info-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 16px 20px;
-		border-bottom: 1px solid #333;
-	}
-
-	.info-title {
-		font-size: 16px;
-		font-weight: 600;
-	}
-
-	.info-body {
-		overflow: auto;
-		flex: 1;
-		min-height: 0;
-	}
-
-	.info-color-row {
-		display: flex;
-		border-bottom: 1px solid #1a1a1a;
-	}
-
-	.info-color-swatch {
-		width: 48px;
-		flex-shrink: 0;
-	}
-
-	.info-color-details {
-		padding: 10px 16px;
-		flex: 1;
-		min-width: 0;
-	}
-
-	.info-color-name {
-		font-size: 14px;
-		font-weight: 600;
-	}
-
-	.info-color-values {
-		display: flex;
-		gap: 12px;
-		margin-top: 2px;
-	}
-
-	.info-value {
-		font-family: monospace;
-		font-size: 12px;
-		color: #888;
-	}
-
-	.info-oog {
-		font-size: 11px;
-		color: #ef4444;
-	}
-
-	.info-p3 {
-		font-size: 11px;
-		color: #60a5fa;
-	}
-
-	.info-description {
-		margin-top: 3px;
-		font-family: monospace;
-		font-size: 12px;
-		color: #888;
-	}
-
-	.info-copy-btn {
-		padding: 4px 12px;
-		border: 1px solid #555;
-		border-radius: 4px;
-		background: none;
-		color: #fff;
-		font-size: 13px;
-		cursor: pointer;
-		margin-left: auto;
-	}
-	.info-copy-btn:hover { border-color: #999; }
-
-	.info-markdown {
-		padding: 12px 16px;
-		border-top: 1px solid #222;
-	}
-
-	.info-markdown-pre {
-		font-family: monospace;
-		font-size: 11px;
-		color: #888;
-		white-space: pre;
-		overflow-x: auto;
-		margin: 0;
-		line-height: 1.5;
-	}
-
-	.info-group-label {
-		padding: 8px 16px 4px;
-		font-size: 11px;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: #666;
-		border-top: 1px solid #222;
-	}
-
-	/* Group separators */
-	.matrix-col-sep {
-		position: sticky;
-		top: 0;
-		z-index: 20;
-		background: #000;
-	}
-
-	.matrix-row-sep {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 2px 8px;
-		background: #000;
-	}
-
-	.sep-label {
-		font-size: 10px;
-		color: #555;
-		white-space: nowrap;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-	}
-
-	.matrix-cell-sep {
-		background: #000;
-	}
-
-	/* Responsive */
-	@media (max-width: 768px) {
-		.app-header {
-			flex-wrap: wrap;
-			gap: 8px;
-			padding: 10px 12px;
-		}
-
-		.app-title {
-			font-size: 15px;
-			width: 100%;
-		}
-
-		.app-swatches {
-			margin-left: 0;
-			width: 100%;
-			order: 10;
-		}
-
-		.app-opacity input[type='range'] {
-			width: 70px;
-		}
-
-		/* Detail dialog */
-		.detail-dialog {
-			max-width: 98vw;
-			max-height: 95vh;
-			width: 98vw;
-			border-radius: 8px;
-		}
-
-		.dialog-inner {
-			max-height: 95vh;
-		}
-
-		.dialog-info-bar {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 10px;
-			padding: 10px 14px;
-		}
-
-		.dialog-stats {
-			margin-left: 0;
-			width: 100%;
-			justify-content: space-between;
-		}
-
-		.dialog-preview-grid {
-			grid-template-columns: 1fr;
-			gap: 24px;
-			padding: 16px;
-		}
-
-		/* Info dialog */
-		.info-dialog {
-			max-width: 98vw;
-			max-height: 95vh;
-			width: 98vw;
-			border-radius: 8px;
-		}
-
-		.info-header {
-			flex-wrap: wrap;
-			gap: 8px;
-			padding: 12px 14px;
-		}
-
-		.info-title {
-			width: 100%;
-		}
-
-		.info-color-values {
-			flex-wrap: wrap;
-			gap: 6px;
-		}
-	}
-</style>
