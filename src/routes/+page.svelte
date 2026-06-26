@@ -3,6 +3,7 @@
 	import Inspector from '$lib/components/Inspector.svelte';
 	import Matrix from '$lib/components/Matrix.svelte';
 	import Preview from '$lib/components/Preview.svelte';
+	import ModelViewer from '$lib/components/ModelViewer.svelte';
 	import Docs from '$lib/components/Docs.svelte';
 	import ExportPanel from '$lib/components/ExportPanel.svelte';
 	import { app } from '$lib/state/app.svelte';
@@ -46,6 +47,7 @@
 		{ id: 'inspector', label: 'Inspector' },
 		{ id: 'matrix', label: 'Matrix' },
 		{ id: 'preview', label: 'Preview' },
+		{ id: 'explore', label: '3D Explore' },
 		{ id: 'export', label: 'Export' }
 	];
 
@@ -53,12 +55,13 @@
 	let shareLabel = $state('Share');
 
 	onMount(() => {
-		const fromHash = decodeHash(location.hash);
-		if (fromHash) app.source = fromHash.source;
-		else {
-			const last = loadLast();
-			if (last) app.source = last;
-		}
+		decodeHash(location.hash).then((fromHash) => {
+			if (fromHash) app.source = fromHash.source;
+			else {
+				const last = loadLast();
+				if (last) app.source = last;
+			}
+		});
 		savedNames = listSchemes();
 	});
 
@@ -66,8 +69,8 @@
 		saveLast(app.source);
 	});
 
-	function share() {
-		location.hash = encodeHash({ source: app.source });
+	async function share() {
+		location.hash = await encodeHash({ source: app.source });
 		navigator.clipboard?.writeText(location.href);
 		shareLabel = 'Copied!';
 		setTimeout(() => (shareLabel = 'Share'), 1200);
@@ -202,6 +205,8 @@
 					<Matrix />
 				{:else if ui.tab === 'preview'}
 					<Preview />
+				{:else if ui.tab === 'explore'}
+					<ModelViewer seed={app.scheme.entries[0]?.color.hex ?? '#3aa0ff'} />
 				{:else}
 					<ExportPanel />
 				{/if}

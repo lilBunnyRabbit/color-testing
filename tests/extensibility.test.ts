@@ -37,18 +37,20 @@ describe('long-tail models', () => {
 		expect(r.variables.get('x')).toBeDefined();
 	});
 
-	test('backed:false constructor throws an actionable error, caught per-statement', () => {
-		const r = evaluate('a = OKLCH(0.6,0.1,200)\nbad = CMYK(0,0,0,1)\ngood = a.lighten(0.1)');
+	test('experimental CMYK constructor now computes (was a stub)', () => {
+		const r = evaluate('a = OKLCH(0.6,0.1,200)\nink = a.cmyk.totalInk\ncyan = CMYK(1,0,0,0)\ngood = a.lighten(0.1)');
+		expect(r.errors).toEqual([]);
+		expect(typeof r.variables.get('ink')!.value).toBe('number');
+		expect(r.variables.get('cyan')).toBeDefined();
+		expect(r.variables.get('good')).toBeDefined();
+	});
+
+	test('coming-soon system method throws an actionable error, caught per-statement', () => {
+		const r = evaluate('a = OKLCH(0.6,0.1,200)\nbad = a.munsell.nearest()\ngood = a.lighten(0.1)');
 		expect(r.errors.length).toBe(1);
 		expect(r.errors[0].message).toContain('@lilbunnyrabbit/chromatics');
 		expect(r.errors[0].line).toBe(2);
 		expect(r.variables.get('good')).toBeDefined();
-	});
-
-	test('backed:false view method also throws actionably', () => {
-		const r = evaluate('a = OKLCH(0.6,0.1,200)\np = a.hct.tonalPalette()');
-		expect(r.errors.length).toBe(1);
-		expect(r.errors[0].message).toContain('@lilbunnyrabbit/chromatics');
 	});
 });
 

@@ -13,7 +13,7 @@ export { ColorValue, isColorValue } from './value';
 export type { DSLValue, DSLFunction, PlainObject } from './value';
 export { ModelView } from './view';
 export { getModel, allModels, CHANNELS } from './registry';
-export type { ModelDef, MethodDef, ChannelDef, ParamDef, Family } from './types';
+export type { ModelDef, MethodDef, ChannelDef, ParamDef, Family, ModelStatus } from './types';
 
 /** Build a constructor function from a model's registered `ctor`. */
 function ctor(id: string) {

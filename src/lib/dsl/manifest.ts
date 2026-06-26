@@ -5,7 +5,7 @@
  * This is what kills the "three-places drift".
  */
 import { allModels, CHANNELS } from '../models/index.js';
-import type { ModelDef, MethodDef, ParamDef, ChannelDef } from '../models/index.js';
+import type { ModelDef, MethodDef, ParamDef, ChannelDef, ModelStatus } from '../models/index.js';
 
 export interface ConstructorInfo {
 	name: string;
@@ -21,6 +21,7 @@ export interface MemberInfo {
 	doc: string;
 	model: string;
 	backed: boolean;
+	status: ModelStatus;
 }
 
 export interface TokenManifest {
@@ -65,7 +66,8 @@ function memberInfo(def: MethodDef, m: ModelDef): MemberInfo {
 		detail: def.kind === 'method' ? `${sig(def.params)} → ${def.returns}` : def.returns,
 		doc: def.doc,
 		model: m.id,
-		backed: m.backed
+		backed: m.backed,
+		status: m.status
 	};
 }
 
@@ -99,7 +101,8 @@ export function buildManifest(
 			detail: `${m.label} view`,
 			doc: `Think/act in ${m.label}`,
 			model: m.id,
-			backed: m.backed
+			backed: m.backed,
+			status: m.status
 		});
 
 		const members: MemberInfo[] = [];
@@ -111,7 +114,8 @@ export function buildManifest(
 				detail: 'number',
 				doc: ch.label,
 				model: m.id,
-				backed: m.backed
+				backed: m.backed,
+				status: m.status
 			});
 		}
 		for (const def of m.methods.values()) {
@@ -131,7 +135,8 @@ export function buildManifest(
 			detail: 'number',
 			doc: `${ch.label} (${ch.modelId})`,
 			model: ch.modelId,
-			backed: true
+			backed: true,
+			status: 'stable'
 		});
 	}
 

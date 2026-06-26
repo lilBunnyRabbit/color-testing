@@ -52,20 +52,21 @@ describe('exporters', () => {
 });
 
 describe('url-hash round-trip', () => {
-	test('encode/decode preserves source (with or without leading #)', () => {
+	test('encode/decode preserves source (with or without leading #)', async () => {
 		const state = { source: SRC };
-		const hash = encodeHash(state);
-		expect(decodeHash('#' + hash)).toEqual(state);
-		expect(decodeHash(hash)).toEqual(state);
+		const hash = await encodeHash(state);
+		expect(await decodeHash('#' + hash)).toEqual(state);
+		expect(await decodeHash(hash)).toEqual(state);
 	});
 
-	test('bad input decodes to null', () => {
-		expect(decodeHash('')).toBeNull();
-		expect(decodeHash('#not-valid-base64!!')).toBeNull();
+	test('bad input decodes to null', async () => {
+		expect(await decodeHash('')).toBeNull();
+		expect(await decodeHash('#not-valid-base64!!')).toBeNull();
+		expect(await decodeHash('#~1!!!notbase64')).toBeNull();
 	});
 
-	test('handles unicode', () => {
+	test('handles unicode', async () => {
 		const state = { source: 'cafe = hex("#fff") // ☕ ünïcödé' };
-		expect(decodeHash('#' + encodeHash(state))).toEqual(state);
+		expect(await decodeHash('#' + (await encodeHash(state)))).toEqual(state);
 	});
 });

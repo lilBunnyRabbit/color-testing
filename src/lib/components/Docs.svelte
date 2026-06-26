@@ -1,9 +1,14 @@
 <script lang="ts">
 	import { manifest, BUILTIN_DOCS } from '$lib/dsl/manifest';
+	import { MODEL_DOCS } from '$lib/dsl/model-docs';
 	import type { ModelDef, MethodDef, ChannelDef } from '$lib/models';
 
 	let { onclose }: { onclose?: () => void } = $props();
 	let query = $state('');
+	let showGuide = $state(true);
+
+	const fmtRange = (r: [number, number]) =>
+		`${Number.isInteger(r[0]) ? r[0] : +r[0].toFixed(2)} … ${Number.isInteger(r[1]) ? r[1] : +r[1].toFixed(2)}`;
 
 	const FAMILY_LABEL: Record<string, string> = {
 		root: 'Value shortcuts',
@@ -14,7 +19,8 @@
 		tristimulus: 'Tristimulus',
 		video: 'Video / broadcast',
 		subtractive: 'Subtractive',
-		system: 'Color systems'
+		system: 'Color systems',
+		other: 'Other / concepts'
 	};
 	const FAMILY_ORDER = [
 		'root',
@@ -25,7 +31,8 @@
 		'tristimulus',
 		'video',
 		'subtractive',
-		'system'
+		'system',
+		'other'
 	];
 
 	const q = $derived(query.trim().toLowerCase());
@@ -34,7 +41,8 @@
 	);
 
 	function modelNameMatch(m: ModelDef) {
-		return m.label.toLowerCase().includes(q) || m.id.includes(q);
+		const aka = MODEL_DOCS[m.id]?.aka?.toLowerCase() ?? '';
+		return m.label.toLowerCase().includes(q) || m.id.includes(q) || aka.includes(q);
 	}
 	function methodList(m: ModelDef): MethodDef[] {
 		const all = Array.from(m.methods.values());
@@ -81,6 +89,44 @@
 		</header>
 
 		<div class="docs-body scroll">
+			{#if !q}
+				<section class="guide">
+					<button class="guide-head" onclick={() => (showGuide = !showGuide)} aria-expanded={showGuide}>
+						<span class="guide-caret" class:open={showGuide}>▸</span>
+						Working with color models — how conversion works
+					</button>
+					{#if showGuide}
+						<div class="guide-body">
+							<p>
+								Every value is <strong>model-agnostic</strong>. Reach any model as a view, then read a
+								channel or call a method — the result is a normal color you keep chaining.
+							</p>
+							<ul>
+								<li>
+									<strong>Convert by accessing a view.</strong> Any color reaches
+									<strong>any of the {manifest.models.length - 1} models</strong> directly — there's no
+									conversion graph to manage (colors are stored in OKLCH and routed through culori).
+									<code>c.hsl</code>, <code>c.lab</code>, <code>c.cam16</code> …
+								</li>
+								<li>
+									<strong>Read a channel:</strong>
+									<code>OKLCH(0.7, 0.12, 250).hsl.h</code> → the hue in HSL.
+								</li>
+								<li>
+									<strong>Manipulate &amp; chain</strong> (methods return a new color):
+									<code>OKLCH(0.7, 0.12, 250).hsl.rotateHue(30).lab.l</code>.
+								</li>
+								<li>
+									<strong>Change one channel</strong> by reconstructing with the others:
+									<code>HSL(c.hsl.h, 0.5, c.hsl.l)</code> sets saturation to 0.5 — no "convert back" step,
+									the result is already a color.
+								</li>
+							</ul>
+						</div>
+					{/if}
+				</section>
+			{/if}
+
 			{#if ctors.length}
 				<section class="block">
 					<h3 class="block-title">Constructors</h3>
@@ -114,14 +160,24 @@
 						{#each g.models as m (m.id)}
 							<div class="model">
 								<div class="model-head">
-									<span class="model-label" class:stub={!m.backed}>{m.label}</span>
+									<span class="model-label" class:stub={m.status === 'coming-soon'}>{m.label}</span>
 									{#if m.id !== 'root'}<code class="view-chip">.{m.id}</code>{/if}
-									{#if !m.backed}<span class="stub-badge">needs package</span>{/if}
+									{#if m.status === 'experimental'}<span class="status-badge experimental">experimental</span>
+									{:else if m.status === 'coming-soon'}<span class="status-badge soon">coming soon</span>{/if}
 								</div>
+								{#if MODEL_DOCS[m.id]?.about}
+									<p class="model-about">{MODEL_DOCS[m.id]?.about}</p>
+								{/if}
+								{#if MODEL_DOCS[m.id]?.aka}
+									<div class="model-aka"><span>aka</span> {MODEL_DOCS[m.id]?.aka}</div>
+								{/if}
 								{#if channelList(m).length}
 									<div class="chans">
 										{#each channelList(m) as ch (ch.localKey)}
-											<span class="chan"><code>.{ch.localKey}</code>{ch.label}</span>
+											<span class="chan">
+												<code>.{ch.localKey}</code>{ch.label}
+												<span class="chan-range">{fmtRange(ch.range)}</span>
+											</span>
 										{/each}
 									</div>
 								{/if}
@@ -289,14 +345,23 @@
 		padding: 1px 6px;
 		border-radius: 99px;
 	}
-	.stub-badge {
+	.status-badge {
 		margin-left: auto;
 		font-size: 9.5px;
 		font-weight: 600;
-		color: var(--warn);
-		border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
 		border-radius: 99px;
 		padding: 0 7px;
+		text-transform: lowercase;
+		letter-spacing: 0.02em;
+	}
+	.status-badge.experimental {
+		color: var(--accent);
+		border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+		background: color-mix(in srgb, var(--accent) 10%, transparent);
+	}
+	.status-badge.soon {
+		color: var(--warn);
+		border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
 	}
 	.chans {
 		display: flex;
@@ -356,5 +421,86 @@
 		text-align: center;
 		color: var(--text-faint);
 		font-size: 13px;
+	}
+
+	/* conversion guide */
+	.guide {
+		margin-top: 14px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		overflow: hidden;
+	}
+	.guide-head {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 10px 13px;
+		background: var(--surface-2);
+		border: none;
+		color: var(--text);
+		font-size: 12.5px;
+		font-weight: 650;
+		cursor: pointer;
+		text-align: left;
+	}
+	.guide-caret {
+		color: var(--accent);
+		transition: transform 0.12s;
+	}
+	.guide-caret.open {
+		transform: rotate(90deg);
+	}
+	.guide-body {
+		padding: 12px 15px 14px;
+		font-size: 12.5px;
+		line-height: 1.6;
+		color: var(--text-muted);
+	}
+	.guide-body p {
+		margin: 0 0 8px;
+	}
+	.guide-body ul {
+		margin: 0;
+		padding-left: 18px;
+		display: grid;
+		gap: 6px;
+	}
+	.guide-body code {
+		font-family: 'JetBrains Mono', ui-monospace, monospace;
+		font-size: 11.5px;
+		background: var(--surface-2);
+		color: var(--syn-method);
+		padding: 1px 5px;
+		border-radius: var(--radius-xs);
+	}
+	.guide-body strong {
+		color: var(--text);
+	}
+	.model-about {
+		margin: 0 0 7px;
+		font-size: 12px;
+		line-height: 1.55;
+		color: var(--text-muted);
+	}
+	.model-aka {
+		margin: -2px 0 8px;
+		font-size: 11px;
+		color: var(--text-faint);
+	}
+	.model-aka span {
+		text-transform: uppercase;
+		font-size: 9px;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		margin-right: 5px;
+		color: var(--accent);
+	}
+	.chan-range {
+		font-family: 'JetBrains Mono', ui-monospace, monospace;
+		font-size: 9.5px;
+		color: var(--text-faint);
+		opacity: 0.85;
 	}
 </style>

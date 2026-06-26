@@ -15,13 +15,14 @@ const KIND_TO_TYPE: Record<MemberInfo['kind'], string> = {
 };
 
 function toCompletion(m: MemberInfo): Completion {
-	return {
-		label: m.name,
-		type: KIND_TO_TYPE[m.kind],
-		detail: m.detail,
-		info: m.backed ? m.doc : `${m.doc} — needs @lilbunnyrabbit/chromatics`,
-		boost: m.backed ? 0 : -50
-	};
+	const info =
+		m.status === 'experimental'
+			? `${m.doc} — experimental`
+			: m.status === 'coming-soon'
+				? `${m.doc} — coming soon (needs @lilbunnyrabbit/chromatics)`
+				: m.doc;
+	const boost = m.status === 'coming-soon' ? -50 : m.status === 'experimental' ? -10 : 0;
+	return { label: m.name, type: KIND_TO_TYPE[m.kind], detail: m.detail, info, boost };
 }
 
 export function chromaCompletions(getVars: () => string[]) {

@@ -15,7 +15,18 @@ export type Family =
 	| 'tristimulus'
 	| 'video'
 	| 'system'
+	| 'other'
 	| 'root';
+
+/**
+ * Maturity of a model's implementation:
+ *  - `stable`       — exact, culori-backed conversion math.
+ *  - `experimental` — a real hand-rolled implementation (faithful but not
+ *                     ICC/spec-certified, e.g. naive CMYK, HSLuv, HCT, RAL).
+ *  - `coming-soon`  — advertised but not implemented yet; methods throw an
+ *                     actionable error (needs a licensed dataset or the package).
+ */
+export type ModelStatus = 'stable' | 'experimental' | 'coming-soon';
 
 export interface ChannelDef {
 	/** Namespaced DSL accessor on the value: "ok_l" | "lab_a" | "hwb_w" | "lr" | "h". */
@@ -69,8 +80,10 @@ export interface ModelDef {
 	/** own ⊕ family-inherited, composed at defineModel(). */
 	methods: Map<string, MethodDef>;
 	toCSS: (self: ColorValue) => string;
-	/** true = culori conversion works; false = stub/polyfill (methods throw). */
+	/** true = conversion works (stable or experimental); false = coming-soon (methods throw). */
 	backed: boolean;
+	/** Implementation maturity, surfaced in docs/autocomplete badges. */
+	status: ModelStatus;
 	priority?: 'critical' | 'high' | 'normal';
 }
 
@@ -81,6 +94,8 @@ export interface ModelSpec {
 	label: string;
 	family: Family;
 	backed?: boolean;
+	/** Maturity. Defaults: backed:false → 'coming-soon', otherwise 'stable'. */
+	status?: ModelStatus;
 	priority?: 'critical' | 'high' | 'normal';
 	ctor?: CtorDef;
 	channels?: ChannelDef[];

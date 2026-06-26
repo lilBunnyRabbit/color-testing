@@ -19,8 +19,17 @@ import './rgb-wide';
 import './perceptual-extra';
 import './hue-extra';
 import './video';
-// Deferred (backed:false) — advertise in docs/autocomplete, throw on use.
+import './extra-backed'; // xyz50, xyb (culori-backed, stable)
+// Experimental — real hand-rolled math via custom culori modes.
 import './cmyk';
 import './hct';
 import './hsluv';
+import './perceptual-xyz'; // xyY, UCS 1976/1960, UVW, Hunter Lab, IPT
+import './rgb-working'; // ACES family, scRGB, SMPTE-C
+import './video-extra'; // YPbPr, YCbCr, YUV, YDbDr, YCgCo, …, Rec.2100
+import './hue-experimental'; // HSP, TSL, RYB
+import './cam'; // CAM16, CAM16-UCS, CIECAM02
+import './print-cone'; // CMY, LMS
+import './coming-soon'; // conceptual / device-specific models (advertised, throw)
+// Color systems — RAL real (experimental), the rest coming-soon.
 import './systems';

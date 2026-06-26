@@ -1,6 +1,6 @@
 /** UI/chrome state: theme, the resizable/collapsible editor, and the active tab. */
 export type Theme = 'light' | 'dark';
-export type Tab = 'inspector' | 'matrix' | 'preview' | 'export';
+export type Tab = 'inspector' | 'matrix' | 'preview' | 'explore' | 'export';
 
 export class UiStore {
 	theme = $state<Theme>('light');

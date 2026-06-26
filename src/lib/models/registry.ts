@@ -32,6 +32,10 @@ import {
 	type Color as CuloriColor
 } from 'culori';
 import type { ModelDef, ModelSpec, ChannelDef, MethodDef } from './types';
+// Side-effect: extends culori's converter graph with our hand-rolled modes.
+// Must run before any converter is built.
+import './custom-modes'; // cmyk, hsluv, hpluv, hct
+import './modes'; // xyz-derived, rgb-working, video, hue, cam …
 
 // --- culori primitives, re-exported (single import site) ---
 export {
@@ -103,6 +107,9 @@ export function defineModel(spec: ModelSpec): ModelDef {
 	const methods = new Map<string, MethodDef>();
 	for (const m of spec.inherit ?? []) methods.set(m.name, m);
 	for (const m of spec.ownMethods ?? []) methods.set(m.name, m); // own overrides inherited
+	// status drives `backed`: only 'coming-soon' is unbacked (methods throw).
+	const status = spec.status ?? (spec.backed === false ? 'coming-soon' : 'stable');
+	const backed = spec.backed ?? status !== 'coming-soon';
 	return {
 		id: spec.id,
 		mode: spec.mode ?? spec.id,
@@ -111,7 +118,8 @@ export function defineModel(spec: ModelSpec): ModelDef {
 		ctor: spec.ctor,
 		channels: spec.channels ?? [],
 		methods,
-		backed: spec.backed ?? true,
+		backed,
+		status,
 		priority: spec.priority,
 		toCSS: spec.toCSS ?? ((self) => self.hex)
 	};

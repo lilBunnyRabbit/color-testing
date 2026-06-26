@@ -37,11 +37,13 @@ function lookup(name: string, getVarInfo: (n: string) => VarInfo | null): Tip | 
 	const m = manifest.members.get(name);
 	if (m) {
 		const detail = m.kind === 'view' ? 'view namespace' : m.kind === 'channel' ? 'channel · number' : m.detail;
-		return {
-			title: name,
-			detail,
-			doc: m.backed ? m.doc : `${m.doc} — needs @lilbunnyrabbit/chromatics`
-		};
+		const doc =
+			m.status === 'experimental'
+				? `${m.doc} — experimental`
+				: m.status === 'coming-soon'
+					? `${m.doc} — coming soon (needs @lilbunnyrabbit/chromatics)`
+					: m.doc;
+		return { title: name, detail, doc };
 	}
 	return null;
 }
