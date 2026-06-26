@@ -4,9 +4,13 @@
 	import Matrix from '$lib/components/Matrix.svelte';
 	import Preview from '$lib/components/Preview.svelte';
 	import Docs from '$lib/components/Docs.svelte';
+	import ExportPanel from '$lib/components/ExportPanel.svelte';
 	import { app } from '$lib/state/app.svelte';
 	import { chromaCompletions } from '$lib/dsl/complete';
+	import { encodeHash, decodeHash } from '$lib/persistence/url-hash';
+	import { saveLast, loadLast, saveScheme, loadScheme, listSchemes } from '$lib/persistence/local-storage';
 	import { examples } from './examples';
+	import { onMount } from 'svelte';
 
 	const completion = chromaCompletions(() => app.result.order);
 	let showDocs = $state(false);
@@ -19,8 +23,47 @@
 	let currentExample = $state(exampleNames[0]);
 	if (app.source === '') app.source = examples[0].source;
 
-	type Tab = 'inspector' | 'matrix' | 'preview';
+	type Tab = 'inspector' | 'matrix' | 'preview' | 'export';
 	let tab = $state<Tab>('inspector');
+
+	let savedNames = $state<string[]>([]);
+	let shareLabel = $state('Share');
+
+	onMount(() => {
+		// Load priority: URL hash > last autosave > default example.
+		const fromHash = decodeHash(location.hash);
+		if (fromHash) app.source = fromHash.source;
+		else {
+			const last = loadLast();
+			if (last) app.source = last;
+		}
+		savedNames = listSchemes();
+	});
+
+	$effect(() => {
+		saveLast(app.source);
+	});
+
+	function share() {
+		location.hash = encodeHash({ source: app.source });
+		navigator.clipboard?.writeText(location.href);
+		shareLabel = 'Copied!';
+		setTimeout(() => (shareLabel = 'Share'), 1200);
+	}
+
+	function save() {
+		const name = prompt('Save scheme as:');
+		if (!name) return;
+		saveScheme(name, app.source);
+		savedNames = listSchemes();
+	}
+
+	function loadNamed(e: Event) {
+		const sel = e.target as HTMLSelectElement;
+		const src = loadScheme(sel.value);
+		if (src != null) app.source = src;
+		sel.value = '';
+	}
 </script>
 
 <svelte:head>
@@ -47,6 +90,23 @@
 				</span>
 			{/if}
 			<div class="flex-1"></div>
+			{#if savedNames.length}
+				<select
+					class="rounded bg-[#18181b] px-2 py-0.5 text-xs text-[#8888a0] outline-none"
+					onchange={loadNamed}
+				>
+					<option value="">Saved…</option>
+					{#each savedNames as n (n)}<option value={n}>{n}</option>{/each}
+				</select>
+			{/if}
+			<button
+				class="rounded px-2 py-0.5 text-xs text-[#8888a0] transition-colors hover:bg-[#2a2a30] hover:text-[#c8c8d0]"
+				onclick={save}>Save</button
+			>
+			<button
+				class="rounded px-2 py-0.5 text-xs text-[#8888a0] transition-colors hover:bg-[#2a2a30] hover:text-[#c8c8d0]"
+				onclick={share}>{shareLabel}</button
+			>
 			<button
 				class="rounded px-2 py-0.5 text-xs transition-colors hover:bg-[#2a2a30] hover:text-[#c8c8d0] {showDocs
 					? 'bg-[#2a2a30] text-[#c8c8d0]'
@@ -95,6 +155,12 @@
 					: 'text-[#8888a0] hover:text-[#c8c8d0]'}"
 				onclick={() => (tab = 'preview')}>Preview</button
 			>
+			<button
+				class="rounded px-3 py-1 text-xs font-medium transition-colors {tab === 'export'
+					? 'bg-[#2a2a30] text-[#e4e4e8]'
+					: 'text-[#8888a0] hover:text-[#c8c8d0]'}"
+				onclick={() => (tab = 'export')}>Export</button
+			>
 			<span class="ml-auto pr-2 text-xs text-[#555]">
 				{app.scheme.entries.length} color{app.scheme.entries.length !== 1 ? 's' : ''}
 			</span>
@@ -105,8 +171,10 @@
 				<Inspector scheme={app.scheme} />
 			{:else if tab === 'matrix'}
 				<Matrix />
-			{:else}
+			{:else if tab === 'preview'}
 				<Preview />
+			{:else}
+				<ExportPanel />
 			{/if}
 		</div>
 	</div>
