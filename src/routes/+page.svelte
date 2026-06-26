@@ -2,6 +2,7 @@
 	import Editor from '$lib/Editor.svelte';
 	import Inspector from '$lib/components/Inspector.svelte';
 	import Matrix from '$lib/components/Matrix.svelte';
+	import Preview from '$lib/components/Preview.svelte';
 	import { app } from '$lib/state/app.svelte';
 	import { examples } from './examples';
 
@@ -90,9 +91,7 @@
 			{:else if tab === 'matrix'}
 				<Matrix />
 			{:else}
-				<div class="p-8 text-sm text-[#555]">
-					Real-example previews (Landing / Dashboard / Blog) — coming in the next step.
-				</div>
+				<Preview />
 			{/if}
 		</div>
 	</div>
