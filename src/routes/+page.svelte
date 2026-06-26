@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { evaluate, type EvalResult, type DSLValue } from '$lib/dsl/evaluator.js';
-	import { Color } from '$lib/dsl/color.js';
+	import { isColorValue, type ColorValue } from '$lib/models';
 	import Editor from '$lib/Editor.svelte';
 	import { examples } from './examples';
 
@@ -23,34 +23,34 @@
 	}
 
 	function formatValue(val: DSLValue): string {
-		if (val instanceof Color) return val.hex;
+		if (isColorValue(val)) return val.hex;
 		if (typeof val === 'number') return String(Math.round(val * 10000) / 10000);
 		return String(val);
 	}
 
 	function formatOklch(val: DSLValue): string {
-		if (!(val instanceof Color)) return '';
-		const l = Math.round(val.ok_l * 1000) / 1000;
-		const c = Math.round(val.ok_c * 10000) / 10000;
-		const h = Math.round(val.ok_h * 100) / 100;
+		if (!isColorValue(val)) return '';
+		const l = Math.round(val.channel('ok_l') * 1000) / 1000;
+		const c = Math.round(val.channel('ok_c') * 10000) / 10000;
+		const h = Math.round(val.channel('ok_h') * 100) / 100;
 		return `oklch(${l}, ${c}, ${h})`;
 	}
 
 	function textColor(val: DSLValue): string {
-		if (!(val instanceof Color)) return '#ccc';
-		return val.ok_l > 0.6 ? '#1a1a1a' : '#f0f0f0';
+		if (!isColorValue(val)) return '#ccc';
+		return val.channel('ok_l') > 0.6 ? '#1a1a1a' : '#f0f0f0';
 	}
 
 	let colorVars = $derived(
 		result.order
 			.map((name) => result.variables.get(name)!)
-			.filter((v) => v.value instanceof Color)
+			.filter((v) => isColorValue(v.value))
 	);
 
 	let nonColorVars = $derived(
 		result.order
 			.map((name) => result.variables.get(name)!)
-			.filter((v) => !(v.value instanceof Color))
+			.filter((v) => !isColorValue(v.value))
 	);
 
 	let showDocs = $state(false);
@@ -251,7 +251,7 @@
 			{#if colorVars.length > 0}
 				<div class="grid gap-2">
 					{#each colorVars as v}
-						{@const c = v.value as Color}
+						{@const c = v.value as ColorValue}
 						<div class="flex items-stretch gap-3 rounded-lg bg-[#18181b] p-3">
 							<!-- Color swatch -->
 							<div
@@ -314,11 +314,11 @@
 						<h2 class="mb-2 text-xs font-semibold tracking-wide text-[#555]">PREVIEW</h2>
 						<div
 							class="overflow-hidden rounded-lg p-6"
-							style="background-color: {(bg.value as Color).hex}; color: {(fg.value as Color).hex}"
+							style="background-color: {(bg.value as ColorValue).hex}; color: {(fg.value as ColorValue).hex}"
 						>
 							<h3
 								class="mb-2 text-lg font-bold"
-								style={pri ? `color: ${(pri.value as Color).hex}` : ''}
+								style={pri ? `color: ${(pri.value as ColorValue).hex}` : ''}
 							>
 								Theme Preview
 							</h3>
@@ -329,7 +329,7 @@
 								{#each colorVars.filter((v) => !v.name.startsWith('bg') && v.name !== 'background' && !v.name.startsWith('fg') && v.name !== 'foreground' && v.name !== 'muted') as cv}
 									<div
 										class="rounded-md px-3 py-1.5 text-xs font-medium"
-										style="background-color: {(cv.value as Color).hex}; color: {textColor(cv.value)}"
+										style="background-color: {(cv.value as ColorValue).hex}; color: {textColor(cv.value)}"
 									>
 										{cv.name}
 									</div>

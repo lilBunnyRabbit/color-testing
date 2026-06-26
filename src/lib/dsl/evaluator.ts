@@ -1,19 +1,13 @@
 import * as acorn from 'acorn';
 import type { Node } from 'estree';
-import { Color } from './color.js';
+import { isColorValue, ModelView } from '../models/index.js';
+import { num } from '../models/util.js';
+import { createEnvironment } from './environment.js';
+import type { DSLValue, DSLFunction, PlainObject } from '../models/index.js';
 
 // --- Types ---
 
-export type PlainObject = { [key: string]: DSLValue };
-export type DSLValue =
-	| number
-	| string
-	| boolean
-	| Color
-	| DSLValue[]
-	| PlainObject
-	| DSLFunction;
-export type DSLFunction = (...args: DSLValue[]) => DSLValue;
+export type { DSLValue, DSLFunction, PlainObject };
 
 export interface Variable {
 	name: string;
@@ -32,60 +26,6 @@ export interface EvalResult {
 	variables: Map<string, Variable>;
 	errors: EvalError[];
 	order: string[]; // variable names in definition order
-}
-
-// --- Built-in environment ---
-
-function createEnvironment(): Map<string, DSLValue> {
-	const env = new Map<string, DSLValue>();
-
-	// Color constructors
-	env.set('HSL', (h: DSLValue, s: DSLValue, l: DSLValue) =>
-		Color.HSL(num(h), num(s), num(l))
-	);
-	env.set('RGB', (r: DSLValue, g: DSLValue, b: DSLValue) =>
-		Color.RGB(num(r), num(g), num(b))
-	);
-	env.set('OKLCH', (l: DSLValue, c: DSLValue, h: DSLValue) =>
-		Color.OKLCH(num(l), num(c), num(h))
-	);
-	env.set('hex', (s: DSLValue) => Color.hex(str(s)));
-
-	// Utility functions
-	env.set('mix', (a: DSLValue, b: DSLValue, ratio: DSLValue) =>
-		color(a).mix(color(b), num(ratio))
-	);
-	env.set('contrast', (a: DSLValue, b: DSLValue) => color(a).contrast(color(b)));
-
-	// Math
-	env.set('abs', (n: DSLValue) => Math.abs(num(n)));
-	env.set('min', (...args: DSLValue[]) => Math.min(...args.map(num)));
-	env.set('max', (...args: DSLValue[]) => Math.max(...args.map(num)));
-	env.set('round', (n: DSLValue) => Math.round(num(n)));
-	env.set('floor', (n: DSLValue) => Math.floor(num(n)));
-	env.set('ceil', (n: DSLValue) => Math.ceil(num(n)));
-	env.set('clamp', (val: DSLValue, lo: DSLValue, hi: DSLValue) =>
-		Math.max(num(lo), Math.min(num(hi), num(val)))
-	);
-
-	return env;
-}
-
-// --- Type helpers ---
-
-function num(v: DSLValue): number {
-	if (typeof v === 'number') return v;
-	throw new Error(`Expected number, got ${typeof v}`);
-}
-
-function str(v: DSLValue): string {
-	if (typeof v === 'string') return v;
-	throw new Error(`Expected string, got ${typeof v}`);
-}
-
-function color(v: DSLValue): Color {
-	if (v instanceof Color) return v;
-	throw new Error(`Expected color, got ${typeof v}`);
 }
 
 // --- Evaluator ---
@@ -224,17 +164,20 @@ function evalNode(node: Node, scope: Scope): DSLValue {
 				return el;
 			}
 
-			if (obj instanceof Color && typeof prop === 'string') {
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const val = (obj as any)[prop];
-				if (typeof val === 'function') {
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					return ((...args: DSLValue[]) => (val as any).call(obj, ...args)) as DSLFunction;
-				}
-				if (val === undefined) {
+			if (isColorValue(obj) && typeof prop === 'string') {
+				const m = obj.member(prop);
+				if (m === undefined) {
 					throw new Error(`Color has no property: ${prop}`);
 				}
-				return val as DSLValue;
+				return m;
+			}
+
+			if (obj instanceof ModelView && typeof prop === 'string') {
+				const m = obj.member(prop);
+				if (m === undefined) {
+					throw new Error(`'${obj.def.label}' view has no member: ${prop}`);
+				}
+				return m;
 			}
 
 			// Plain object property access: opts.kL

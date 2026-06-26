@@ -1,55 +1,55 @@
 import { test, expect, describe } from 'bun:test';
 import { evaluate } from '../src/lib/dsl/evaluator';
-import { Color } from '../src/lib/dsl/color';
+import { ColorValue } from '../src/lib/models';
 
 function run(src: string) {
 	return evaluate(src);
 }
 
-function colorOf(src: string, name: string): Color {
+function colorOf(src: string, name: string): ColorValue {
 	const r = run(src);
 	const v = r.variables.get(name);
 	if (!v) throw new Error(`no var ${name}; errors: ${JSON.stringify(r.errors)}`);
-	return v.value as Color;
+	return v.value as ColorValue;
 }
 
 describe('object literals — un-deads shift/derive (color.ts:139,149)', () => {
 	test('shift({ l }) adds to OKLCH lightness', () => {
 		const r = run('a = OKLCH(0.5, 0.1, 200)\nb = a.shift({ l: 0.1 })');
 		expect(r.errors).toEqual([]);
-		const b = r.variables.get('b')!.value as Color;
-		expect(b.ok_l).toBeCloseTo(0.6, 6);
-		expect(b.ok_c).toBeCloseTo(0.1, 6);
-		expect(b.ok_h).toBeCloseTo(200, 4);
+		const b = r.variables.get('b')!.value as ColorValue;
+		expect(b.channel('ok_l')).toBeCloseTo(0.6, 6);
+		expect(b.channel('ok_c')).toBeCloseTo(0.1, 6);
+		expect(b.channel('ok_h')).toBeCloseTo(200, 4);
 	});
 
 	test('shift with multiple keys updates each channel', () => {
 		const b = colorOf('a = OKLCH(0.5, 0.1, 100)\nb = a.shift({ l: 0.1, c: 0.05, h: 20 })', 'b');
-		expect(b.ok_l).toBeCloseTo(0.6, 6);
-		expect(b.ok_c).toBeCloseTo(0.15, 6);
-		expect(b.ok_h).toBeCloseTo(120, 4);
+		expect(b.channel('ok_l')).toBeCloseTo(0.6, 6);
+		expect(b.channel('ok_c')).toBeCloseTo(0.15, 6);
+		expect(b.channel('ok_h')).toBeCloseTo(120, 4);
 	});
 
 	test('derive({ l }) replaces OKLCH lightness, leaves c/h', () => {
 		const b = colorOf('a = OKLCH(0.5, 0.1, 200)\nb = a.derive({ l: 0.2 })', 'b');
-		expect(b.ok_l).toBeCloseTo(0.2, 6);
-		expect(b.ok_c).toBeCloseTo(0.1, 6);
-		expect(b.ok_h).toBeCloseTo(200, 4);
+		expect(b.channel('ok_l')).toBeCloseTo(0.2, 6);
+		expect(b.channel('ok_c')).toBeCloseTo(0.1, 6);
+		expect(b.channel('ok_h')).toBeCloseTo(200, 4);
 	});
 
 	test('string and computed object keys', () => {
 		const r = run('k = "l"\na = OKLCH(0.5, 0.1, 200)\nb = a.shift({ "c": 0.05, [k]: 0.1 })');
 		expect(r.errors).toEqual([]);
-		const b = r.variables.get('b')!.value as Color;
-		expect(b.ok_l).toBeCloseTo(0.6, 6);
-		expect(b.ok_c).toBeCloseTo(0.15, 6);
+		const b = r.variables.get('b')!.value as ColorValue;
+		expect(b.channel('ok_l')).toBeCloseTo(0.6, 6);
+		expect(b.channel('ok_c')).toBeCloseTo(0.15, 6);
 	});
 });
 
 describe('array literals + indexing', () => {
 	test('color array literal and positive index', () => {
 		const pick = colorOf('a = OKLCH(0.4, 0.1, 10)\nb = OKLCH(0.7, 0.1, 10)\npick = [a, b][1]', 'pick');
-		expect(pick.ok_l).toBeCloseTo(0.7, 6);
+		expect(pick.channel('ok_l')).toBeCloseTo(0.7, 6);
 	});
 
 	test('numeric array, .length, positive and negative index', () => {
