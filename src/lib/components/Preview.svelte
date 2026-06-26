@@ -3,8 +3,12 @@
 	import { cssVars, autoAssign, type Roles } from '$lib/scheme/roles';
 	import { simulateVision, visionSimulations } from '$lib/analysis/cvd';
 	import { wcagLevels, wcagColor } from '$lib/analysis/wcag';
+	import BrandMark from './demos/BrandMark.svelte';
+	import StyleSheet from './demos/StyleSheet.svelte';
+	import Collateral from './demos/Collateral.svelte';
+	import DataViz from './demos/DataViz.svelte';
 
-	const demos = ['Landing', 'Dashboard', 'Blog'];
+	const demos = ['Landing', 'Dashboard', 'Blog', 'Brand mark', 'Style sheet', 'Collateral', 'Data viz'];
 	let demoIndex = $state(0);
 	let panelOpen = $state(true);
 
@@ -232,7 +236,7 @@
 								</div>
 							</div>
 						</div>
-					{:else}
+					{:else if demoIndex === 2}
 						<!-- Blog -->
 						<nav class="d-nav">
 							<div class="d-nav-inner">
@@ -280,6 +284,14 @@
 								</div>
 							</aside>
 						</div>
+					{:else if demoIndex === 3}
+						<BrandMark entries={simEntries} />
+					{:else if demoIndex === 4}
+						<StyleSheet entries={simEntries} />
+					{:else if demoIndex === 5}
+						<Collateral entries={simEntries} />
+					{:else}
+						<DataViz entries={simEntries} />
 					{/if}
 				</div>
 			{/if}

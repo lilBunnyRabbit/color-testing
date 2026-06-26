@@ -3,6 +3,7 @@
 	import type { ColorValue } from '$lib/models';
 	import { contrastRatioAlpha } from '$lib/analysis/contrast';
 	import { wcagLevels, wcagColor } from '$lib/analysis/wcag';
+	import { apcaContrast, apcaUse, apcaColor } from '$lib/analysis/apca';
 	import { simulateVision, visionSimulations } from '$lib/analysis/cvd';
 
 	type Cell = { name: string; color: ColorValue; description?: string };
@@ -26,6 +27,7 @@
 		'auto ' + groups.map((g) => `repeat(${g.colors.length}, 1fr)`).join(' 6px ')
 	);
 	const fgAlpha = $derived(app.fgAlpha);
+	let contrastModel = $state<'wcag' | 'apca'>('wcag');
 
 	const sel = $derived(
 		selected && colors[selected.bgIdx] && colors[selected.fgIdx]
@@ -34,6 +36,8 @@
 	);
 	const selRatio = $derived(sel ? contrastRatioAlpha(sel.fg.color, sel.bg.color, fgAlpha) : 0);
 	const selLevels = $derived(wcagLevels(selRatio));
+	const selApca = $derived(sel ? apcaContrast(sel.fg.color, sel.bg.color) : 0);
+	const selApcaUse = $derived(apcaUse(selApca));
 
 	function fmtOklch(c: ColorValue): string {
 		const fmt = (v: number, max: number) => {
@@ -92,6 +96,10 @@
 				<option value={sim.value}>{sim.label}</option>
 			{/each}
 		</select>
+		<div class="seg">
+			<button class="seg-item {contrastModel === 'wcag' ? 'active' : ''}" onclick={() => (contrastModel = 'wcag')}>WCAG</button>
+			<button class="seg-item {contrastModel === 'apca' ? 'active' : ''}" onclick={() => (contrastModel = 'apca')}>APCA</button>
+		</div>
 		<div class="legend">
 			<span class="lg"><i style="background: {wcagColor('AAA')}"></i>AAA</span>
 			<span class="lg"><i style="background: {wcagColor('AA')}"></i>AA</span>
@@ -146,19 +154,27 @@
 								{:else}
 									{@const ratio = contrastRatioAlpha(fg.color, bg.color, fgAlpha)}
 									{@const levels = wcagLevels(ratio)}
+									{@const lc = apcaContrast(fg.color, bg.color)}
+									{@const use = apcaUse(lc)}
+									{@const fail = contrastModel === 'wcag' ? levels.normal === 'Fail' : use === 'Fail'}
 									<!-- svelte-ignore a11y_click_events_have_key_events -->
 									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<div
 										class="matrix-cell"
-										class:matrix-cell-fail={levels.normal === 'Fail'}
+										class:matrix-cell-fail={fail}
 										style="background: {bg.color.toCSS()}; color: {fg.color.toCSS()}; --fg-alpha: {fgAlpha}"
-										title="{bg.name} bg + {fg.name} fg — {ratio.toFixed(2)}:1 ({levels.normal} / {levels.large})"
+										title="{bg.name} bg + {fg.name} fg — WCAG {ratio.toFixed(2)}:1 ({levels.normal}/{levels.large}) · APCA Lc {Math.round(lc)} ({use})"
 										onclick={() => selectCell(bgIdx, fgIdx)}
 									>
 										<div class="cell-content">
 											<div class="cell-header">
-												<span class="cell-ratio">{ratio.toFixed(2)}</span>
-												<span class="cell-wcag">{levels.normal}</span>
+												{#if contrastModel === 'wcag'}
+													<span class="cell-ratio">{ratio.toFixed(2)}</span>
+													<span class="cell-wcag">{levels.normal}</span>
+												{:else}
+													<span class="cell-ratio">{Math.round(lc)}</span>
+													<span class="cell-wcag">{use}</span>
+												{/if}
 											</div>
 											<div class="cell-text-lg">Heading</div>
 											<div class="cell-text-md">Body text sample</div>
@@ -219,6 +235,14 @@
 							{selLevels.large}
 						</div>
 						<div class="dialog-stat-label">Large</div>
+					</div>
+					<div class="dialog-stat">
+						<div class="dialog-ratio">{Math.round(selApca)}</div>
+						<div class="dialog-stat-label">APCA Lc</div>
+					</div>
+					<div class="dialog-stat">
+						<div class="dialog-badge" style="background: {apcaColor(selApcaUse)}">{selApcaUse}</div>
+						<div class="dialog-stat-label">Use</div>
 					</div>
 					<button class="dialog-close" onclick={closeDialog}>Close</button>
 				</div>

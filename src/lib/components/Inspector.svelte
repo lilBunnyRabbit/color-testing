@@ -2,6 +2,7 @@
 	import type { Scheme } from '$lib/scheme/types';
 	import type { ColorValue } from '$lib/models';
 	import type { DSLValue } from '$lib/dsl/evaluator.js';
+	import { nearestName } from '$lib/color-names';
 
 	let { scheme }: { scheme: Scheme } = $props();
 
@@ -66,6 +67,7 @@
 						<div class="line1">
 							<span class="name">{e.name}</span>
 							<span class="chip">{e.model}</span>
+							<span class="chip chip-name" title="nearest CSS color">≈ {nearestName(e.color).name}</span>
 							{#if !e.color.inGamut}
 								<span class="badge badge-warn">out of gamut</span>
 							{:else if e.color.inP3}
@@ -209,6 +211,10 @@
 	.badge-p3 {
 		background: color-mix(in srgb, var(--accent) 18%, transparent);
 		color: var(--accent);
+	}
+	.chip-name {
+		color: var(--text-faint);
+		font-weight: 500;
 	}
 	.convs {
 		display: grid;

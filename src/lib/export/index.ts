@@ -1,5 +1,8 @@
 /** Scheme → string exporters. All pure and testable. */
 import type { Scheme, SchemeEntry } from '../scheme/types.js';
+import { toSwatchSVG } from './swatch.js';
+
+export { toSwatchSVG } from './swatch.js';
 
 export function kebab(name: string): string {
 	return name
@@ -74,13 +77,14 @@ export function toMarkdown(scheme: Scheme): string {
 	return [header, sep, ...body].join('\n');
 }
 
-export type ExportFormat = 'css' | 'tokens' | 'tailwind' | 'markdown';
+export type ExportFormat = 'css' | 'tokens' | 'tailwind' | 'markdown' | 'swatch';
 
 export const EXPORT_FORMATS: { id: ExportFormat; label: string; lang: string }[] = [
 	{ id: 'css', label: 'CSS variables', lang: 'css' },
 	{ id: 'tokens', label: 'DTCG tokens', lang: 'json' },
 	{ id: 'tailwind', label: 'Tailwind', lang: 'js' },
-	{ id: 'markdown', label: 'Markdown', lang: 'md' }
+	{ id: 'markdown', label: 'Markdown', lang: 'md' },
+	{ id: 'swatch', label: 'Swatch sheet', lang: 'svg' }
 ];
 
 export function exportScheme(scheme: Scheme, format: ExportFormat): string {
@@ -93,5 +97,7 @@ export function exportScheme(scheme: Scheme, format: ExportFormat): string {
 			return toTailwind(scheme);
 		case 'markdown':
 			return toMarkdown(scheme);
+		case 'swatch':
+			return toSwatchSVG(scheme);
 	}
 }

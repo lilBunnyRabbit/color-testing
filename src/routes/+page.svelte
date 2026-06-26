@@ -4,6 +4,8 @@
 	import Matrix from '$lib/components/Matrix.svelte';
 	import Preview from '$lib/components/Preview.svelte';
 	import ModelViewer from '$lib/components/ModelViewer.svelte';
+	import Studio from '$lib/components/Studio.svelte';
+	import Validate from '$lib/components/Validate.svelte';
 	import Docs from '$lib/components/Docs.svelte';
 	import ExportPanel from '$lib/components/ExportPanel.svelte';
 	import { app } from '$lib/state/app.svelte';
@@ -45,8 +47,10 @@
 
 	const TABS: { id: Tab; label: string }[] = [
 		{ id: 'inspector', label: 'Inspector' },
-		{ id: 'matrix', label: 'Matrix' },
+		{ id: 'studio', label: 'Studio' },
 		{ id: 'preview', label: 'Preview' },
+		{ id: 'matrix', label: 'Matrix' },
+		{ id: 'validate', label: 'Validate' },
 		{ id: 'explore', label: '3D Explore' },
 		{ id: 'export', label: 'Export' }
 	];
@@ -201,8 +205,12 @@
 			<div class="analyze-body">
 				{#if ui.tab === 'inspector'}
 					<Inspector scheme={app.scheme} />
+				{:else if ui.tab === 'studio'}
+					<Studio />
 				{:else if ui.tab === 'matrix'}
 					<Matrix />
+				{:else if ui.tab === 'validate'}
+					<Validate />
 				{:else if ui.tab === 'preview'}
 					<Preview />
 				{:else if ui.tab === 'explore'}
