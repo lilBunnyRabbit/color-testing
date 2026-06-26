@@ -40,6 +40,7 @@
 	--syn-type: #b45309;
 	--syn-prop: #0e7490;
 	--syn-method: #047857;
+	--syn-view: #0e9488;
 	--syn-num: #c2410c;
 	--syn-str: #15803d;
 	--syn-op: #6b7280;
@@ -82,6 +83,7 @@ html[data-theme='dark'] {
 	--syn-type: #e5c07b;
 	--syn-prop: #7ec8e3;
 	--syn-method: #61c9a8;
+	--syn-view: #4ec9b0;
 	--syn-num: #d19a66;
 	--syn-str: #98c379;
 	--syn-op: #8888a0;

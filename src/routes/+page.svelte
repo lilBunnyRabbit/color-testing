@@ -8,13 +8,34 @@
 	import { app } from '$lib/state/app.svelte';
 	import { ui, type Tab } from '$lib/state/ui.svelte';
 	import { chromaCompletions } from '$lib/dsl/complete';
+	import { chromaHover } from '$lib/dsl/hover';
+	import { isColorValue } from '$lib/models';
 	import { encodeHash, decodeHash } from '$lib/persistence/url-hash';
 	import { saveLast, loadLast, saveScheme, loadScheme, listSchemes } from '$lib/persistence/local-storage';
 	import { examples } from './examples';
 	import { onMount } from 'svelte';
 
 	const completion = chromaCompletions(() => app.result.order);
+	const hover = chromaHover((name) => {
+		const e = app.scheme.byName.get(name);
+		if (e) {
+			const c = e.color;
+			const r2 = (n: number, d: number) => Math.round(n * d) / d;
+			const ok = `oklch(${r2(c.channel('ok_l'), 1000)} ${r2(c.channel('ok_c'), 10000)} ${r2(c.channel('ok_h'), 100)})`;
+			return { hex: c.hex, text: `${c.hex} · ${ok}` };
+		}
+		const v = app.result.variables.get(name);
+		if (v && !isColorValue(v.value)) {
+			const val =
+				typeof v.value === 'number' ? String(Math.round(v.value * 10000) / 10000) : String(v.value);
+			return { text: `= ${val}` };
+		}
+		return null;
+	});
 	let showDocs = $state(false);
+	function onKey(e: KeyboardEvent) {
+		if (e.key === 'Escape' && showDocs) showDocs = false;
+	}
 
 	const EXAMPLES: Record<string, string> = Object.fromEntries(examples.map((e) => [e.name, e.source]));
 	const exampleNames = examples.map((e) => e.name);
@@ -84,6 +105,7 @@
 </script>
 
 <svelte:head><title>Chromatics</title></svelte:head>
+<svelte:window onkeydown={onKey} />
 
 <div class="app">
 	<!-- Top bar -->
@@ -134,8 +156,7 @@
 					</button>
 				</div>
 				<div class="editor-host scroll">
-					<Editor bind:value={app.source} completionSource={completion} />
-					{#if showDocs}<Docs onclose={() => (showDocs = false)} />{/if}
+					<Editor bind:value={app.source} completionSource={completion} {hover} />
 				</div>
 				{#if app.result.errors.length > 0}
 					<div class="errorbar scroll">
@@ -185,6 +206,7 @@
 					<ExportPanel />
 				{/if}
 			</div>
+			{#if showDocs}<Docs onclose={() => (showDocs = false)} />{/if}
 		</section>
 	</div>
 </div>
@@ -360,6 +382,7 @@
 	}
 
 	.analyze-pane {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		flex: 1;

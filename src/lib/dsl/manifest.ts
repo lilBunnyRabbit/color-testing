@@ -34,8 +34,23 @@ export interface TokenManifest {
 	// completion
 	valueMembers: MemberInfo[]; // members on a bare value
 	viewMembers: Map<string, MemberInfo[]>; // model id -> its members
+	members: Map<string, MemberInfo>; // flat name -> info (for hover lookup)
 	models: ModelDef[];
 }
+
+/** One-line docs for the free builtin functions (used by hover + autocomplete). */
+export const BUILTIN_DOCS: Record<string, string> = {
+	mix: 'mix(a, b, ratio?) → color — perceptual blend in OKLCH',
+	contrast: 'contrast(a, b) → number — WCAG contrast ratio (1–21)',
+	deltaE: 'deltaE(a, b) → number — CIEDE2000 perceptual difference',
+	clamp: 'clamp(value, min, max) → number',
+	abs: 'abs(n) → number',
+	min: 'min(…nums) → number',
+	max: 'max(…nums) → number',
+	round: 'round(n) → number',
+	floor: 'floor(n) → number',
+	ceil: 'ceil(n) → number'
+};
 
 const BUILTINS = ['mix', 'contrast', 'deltaE', 'clamp', 'abs', 'min', 'max', 'round', 'floor', 'ceil'];
 
@@ -137,6 +152,17 @@ export function buildManifest(
 		model: 'srgb'
 	});
 
+	// flat name -> info, for hover lookup (value members first, then view methods)
+	const members = new Map<string, MemberInfo>();
+	for (const vm of valueMembers) if (!members.has(vm.name)) members.set(vm.name, vm);
+	for (const list of viewMembers.values()) {
+		for (const m of list) {
+			if ((m.kind === 'method' || m.kind === 'accessor') && !members.has(m.name)) {
+				members.set(m.name, m);
+			}
+		}
+	}
+
 	return {
 		constructors,
 		builtins: BUILTINS,
@@ -146,6 +172,7 @@ export function buildManifest(
 		propertyNames,
 		valueMembers,
 		viewMembers,
+		members,
 		models
 	};
 }

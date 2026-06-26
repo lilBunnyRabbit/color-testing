@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { EditorView, keymap, lineNumbers, drawSelection, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
-	import { EditorState } from '@codemirror/state';
+	import { EditorState, type Extension } from '@codemirror/state';
 	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 	import { syntaxHighlighting, bracketMatching } from '@codemirror/language';
 	import { HighlightStyle } from '@codemirror/language';
@@ -12,11 +12,13 @@
 	let {
 		value = $bindable(''),
 		onchange,
-		completionSource
+		completionSource,
+		hover
 	}: {
 		value: string;
 		onchange?: (value: string) => void;
 		completionSource?: CompletionSource;
+		hover?: Extension;
 	} = $props();
 
 	let container: HTMLDivElement;
@@ -95,6 +97,39 @@
 			borderRadius: 'var(--radius-sm)',
 			color: 'var(--text-muted)',
 			padding: '6px 9px'
+		},
+		'.cm-chroma-tip': {
+			padding: '7px 10px',
+			maxWidth: '300px',
+			fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+			fontSize: '12px',
+			lineHeight: '1.5'
+		},
+		'.cm-chroma-tip .tip-head': {
+			display: 'flex',
+			alignItems: 'center',
+			gap: '6px'
+		},
+		'.cm-chroma-tip .tip-sw': {
+			width: '12px',
+			height: '12px',
+			borderRadius: '3px',
+			border: '1px solid rgba(128,128,128,0.35)',
+			flexShrink: '0'
+		},
+		'.cm-chroma-tip .tip-title': {
+			color: 'var(--accent)',
+			fontWeight: '600',
+			fontFamily: "'JetBrains Mono', ui-monospace, monospace"
+		},
+		'.cm-chroma-tip .tip-detail': {
+			color: 'var(--text-faint)',
+			fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+			fontSize: '11px'
+		},
+		'.cm-chroma-tip .tip-doc': {
+			color: 'var(--text-muted)',
+			marginTop: '3px'
 		}
 	});
 
@@ -105,6 +140,7 @@
 			{ tag: tags.typeName, color: 'var(--syn-type)' },
 			{ tag: tags.propertyName, color: 'var(--syn-prop)' },
 			{ tag: tags.function(tags.propertyName), color: 'var(--syn-method)' },
+			{ tag: tags.namespace, color: 'var(--syn-view)' },
 			{ tag: tags.number, color: 'var(--syn-num)' },
 			{ tag: tags.string, color: 'var(--syn-str)' },
 			{ tag: tags.bool, color: 'var(--syn-num)' },
@@ -138,6 +174,7 @@
 					...(completionSource
 						? [autocompletion({ override: [completionSource], activateOnTyping: true })]
 						: []),
+					...(hover ? [hover] : []),
 					theme,
 					highlight,
 					updateListener,
