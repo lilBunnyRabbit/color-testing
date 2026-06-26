@@ -3,8 +3,13 @@
 	import type { ColorValue } from '$lib/models';
 	import type { DSLValue } from '$lib/dsl/evaluator.js';
 	import { nearestName } from '$lib/color-names';
+	import { isPreview } from '$lib/dsl/preview';
+	import PreviewCard from './preview-cards/PreviewCard.svelte';
 
 	let { scheme }: { scheme: Scheme } = $props();
+
+	const previews = $derived(scheme.nonColorVars.filter((v) => isPreview(v.value)));
+	const plainVars = $derived(scheme.nonColorVars.filter((v) => !isPreview(v.value)));
 
 	const r2 = (n: number, d: number) => Math.round(n * d) / d;
 	function fmtOklch(c: ColorValue) {
@@ -99,11 +104,22 @@
 		</div>
 	{/if}
 
-	{#if scheme.nonColorVars.length > 0}
+	{#if previews.length > 0}
+		<div class="previews">
+			<div class="sec">Previews</div>
+			<div class="preview-stack">
+				{#each previews as v (v.name)}
+					<PreviewCard data={v.value} name={v.name} />
+				{/each}
+			</div>
+		</div>
+	{/if}
+
+	{#if plainVars.length > 0}
 		<div class="values">
 			<div class="sec">Values</div>
 			<div class="val-grid">
-				{#each scheme.nonColorVars as v (v.name)}
+				{#each plainVars as v (v.name)}
 					<div class="val-row">
 						<span class="name">{v.name}</span>
 						<span class="val mono">{fmtVal(v.value)}</span>
@@ -283,6 +299,14 @@
 		font-size: 12.5px;
 		color: var(--text-faint);
 		margin-top: 4px;
+	}
+	.previews {
+		margin-top: 18px;
+	}
+	.preview-stack {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
 	}
 	.values {
 		margin-top: 18px;

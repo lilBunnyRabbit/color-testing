@@ -7,6 +7,7 @@ import { manifest } from './manifest.js';
 import { getModel, hex, ColorValue, type DSLValue } from '../models/index.js';
 import { num, color, oklchMix } from '../models/util.js';
 import { wcagContrast, differenceCiede2000 } from '../models/registry.js';
+import { preview } from './preview.js';
 
 export function createEnvironment(): Map<string, DSLValue> {
 	const env = new Map<string, DSLValue>();
@@ -33,6 +34,9 @@ export function createEnvironment(): Map<string, DSLValue> {
 	env.set('deltaE', (a: DSLValue, b: DSLValue) =>
 		differenceCiede2000()(color(a).project('lab'), color(b).project('lab'))
 	);
+
+	// Preview namespace — preview.gradient(a, b), preview.pair(fg, bg), …
+	env.set('preview', preview as unknown as DSLValue);
 
 	// Math
 	env.set('abs', (n: DSLValue) => Math.abs(num(n)));

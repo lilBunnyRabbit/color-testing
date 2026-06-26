@@ -6,6 +6,7 @@
  */
 import { allModels, CHANNELS } from '../models/index.js';
 import type { ModelDef, MethodDef, ParamDef, ChannelDef, ModelStatus } from '../models/index.js';
+import { PREVIEW_SIGNATURES } from './preview.js';
 
 export interface ConstructorInfo {
 	name: string;
@@ -50,10 +51,11 @@ export const BUILTIN_DOCS: Record<string, string> = {
 	max: 'max(…nums) → number',
 	round: 'round(n) → number',
 	floor: 'floor(n) → number',
-	ceil: 'ceil(n) → number'
+	ceil: 'ceil(n) → number',
+	preview: 'preview.* — values that render as cards in the Inspector'
 };
 
-const BUILTINS = ['mix', 'contrast', 'deltaE', 'clamp', 'abs', 'min', 'max', 'round', 'floor', 'ceil'];
+const BUILTINS = ['mix', 'contrast', 'deltaE', 'clamp', 'abs', 'min', 'max', 'round', 'floor', 'ceil', 'preview'];
 
 function sig(params: ParamDef[]): string {
 	return '(' + params.map((p) => p.name + (p.optional ? '?' : '')).join(', ') + ')';
@@ -125,6 +127,21 @@ export function buildManifest(
 		}
 		viewMembers.set(m.id, members);
 	}
+
+	// preview.* namespace members — autocomplete after `preview.`
+	const previewMembers: MemberInfo[] = Object.entries(PREVIEW_SIGNATURES).map(([name, s]) => {
+		methodNames.add(name);
+		return {
+			name,
+			kind: 'method' as const,
+			detail: `${s.sig} → preview`,
+			doc: s.doc,
+			model: 'preview',
+			backed: true,
+			status: 'stable' as const
+		};
+	});
+	viewMembers.set('preview', previewMembers);
 
 	// flat channel accessors on a bare value (ok_l, hwb_w, lab_a, lr…)
 	for (const [key, ch] of channels) {
