@@ -80,8 +80,8 @@ export function toSwatchSVG(scheme: Scheme, opts: SwatchOptions = {}): string {
 			const fill = e.color.hex;
 			const lab = labelOn(e);
 			return `  <g transform="translate(${cx} ${cy})" clip-path="url(#cardClip)">
-    <rect width="${cardW}" height="${cardH}" fill="#ffffff"/>
     <rect width="${cardW}" height="${swatchH}" fill="${fill}"/>
+    <rect y="${swatchH}" width="${cardW}" height="${cardH - swatchH}" fill="#ffffff"/>
     <text x="14" y="26" font-size="13" font-weight="700" fill="${lab}" font-family="ui-sans-serif, system-ui, sans-serif">${esc(e.name)}</text>
     <text x="14" y="${swatchH - 14}" font-size="11" fill="${lab}" opacity="0.85" font-family="ui-monospace, monospace">${fill}</text>
     <text x="14" y="${swatchH + 26}" font-size="11" font-weight="600" fill="#11181c" font-family="ui-sans-serif, system-ui, sans-serif">${esc(e.name)}</text>
