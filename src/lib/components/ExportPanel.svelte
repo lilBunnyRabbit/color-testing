@@ -6,6 +6,13 @@
 	const output = $derived(exportScheme(app.scheme, format));
 	let copied = $state(false);
 
+	const HINTS: Record<ExportFormat, string> = {
+		css: ':root custom properties — drop into any stylesheet.',
+		tokens: 'W3C Design Token (DTCG) JSON for Figma / Style Dictionary.',
+		tailwind: 'Tailwind v4 @theme block + a legacy config colors object.',
+		markdown: 'A documentation table — name · hex · oklch · comment.'
+	};
+
 	function copy() {
 		navigator.clipboard.writeText(output);
 		copied = true;
@@ -14,21 +21,32 @@
 </script>
 
 <div class="export-root">
-	<div class="ex-toolbar">
-		{#each EXPORT_FORMATS as f (f.id)}
-			<button
-				class="ex-tab {format === f.id ? 'ex-active' : ''}"
-				onclick={() => (format = f.id)}>{f.label}</button
-			>
-		{/each}
-		<button class="ex-copy" onclick={copy} disabled={!app.scheme.entries.length}>
-			{copied ? 'Copied!' : 'Copy'}
-		</button>
+	<div class="ex-bar">
+		<div class="seg">
+			{#each EXPORT_FORMATS as f (f.id)}
+				<button class="seg-item {format === f.id ? 'active' : ''}" onclick={() => (format = f.id)}>
+					{f.label}
+				</button>
+			{/each}
+		</div>
 	</div>
+
 	{#if app.scheme.entries.length === 0}
 		<div class="ex-empty">Define some colors to export.</div>
 	{:else}
-		<pre class="ex-output">{output}</pre>
+		<div class="ex-hint">{HINTS[format]}</div>
+		<div class="ex-card">
+			<button class="ex-copy" onclick={copy}>
+				{#if copied}
+					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+					Copied
+				{:else}
+					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+					Copy
+				{/if}
+			</button>
+			<pre class="ex-output mono scroll">{output}</pre>
+		</div>
 	{/if}
 </div>
 
@@ -38,65 +56,70 @@
 		flex-direction: column;
 		height: 100%;
 		min-height: 0;
+		padding: 14px;
+		gap: 12px;
 		background: var(--bg);
 	}
-	.ex-toolbar {
+	.ex-bar {
 		display: flex;
 		align-items: center;
-		gap: 4px;
-		padding: 8px 12px;
-		border-bottom: 1px solid var(--border);
 		flex-shrink: 0;
-		flex-wrap: wrap;
 	}
-	.ex-tab {
-		padding: 3px 9px;
-		border: 1px solid transparent;
-		border-radius: 4px;
-		background: none;
-		color: var(--text-faint);
+	.ex-hint {
 		font-size: 12px;
-		cursor: pointer;
-	}
-	.ex-tab:hover {
-		color: var(--text);
-	}
-	.ex-active {
-		background: var(--border);
-		color: var(--text);
-	}
-	.ex-copy {
-		margin-left: auto;
-		padding: 3px 10px;
-		border: 1px solid var(--border);
-		border-radius: 4px;
-		background: none;
-		color: var(--text);
-		font-size: 12px;
-		cursor: pointer;
-	}
-	.ex-copy:hover:not(:disabled) {
-		border-color: var(--text-faint);
-	}
-	.ex-copy:disabled {
-		opacity: 0.4;
-		cursor: default;
-	}
-	.ex-empty {
-		padding: 32px;
 		color: var(--text-faint);
-		font-size: 13px;
+		flex-shrink: 0;
 	}
-	.ex-output {
+	.ex-card {
+		position: relative;
 		flex: 1;
 		min-height: 0;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		box-shadow: var(--shadow-sm);
+		overflow: hidden;
+	}
+	.ex-copy {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		z-index: 2;
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 5px 11px;
+		border-radius: var(--radius-xs);
+		border: 1px solid var(--border);
+		background: var(--surface);
+		color: var(--text);
+		font-size: 12px;
+		font-weight: 500;
+		cursor: pointer;
+		box-shadow: var(--shadow-sm);
+		transition:
+			border-color 0.12s,
+			color 0.12s;
+	}
+	.ex-copy:hover {
+		border-color: var(--border-strong);
+	}
+	.ex-output {
+		height: 100%;
 		overflow: auto;
 		margin: 0;
-		padding: 14px 16px;
-		font-family: ui-monospace, Menlo, monospace;
+		padding: 16px 18px;
 		font-size: 12px;
-		line-height: 1.6;
+		line-height: 1.65;
 		color: var(--text);
 		white-space: pre;
+	}
+	.ex-empty {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--text-faint);
+		font-size: 13px;
 	}
 </style>

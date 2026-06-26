@@ -5,27 +5,63 @@
 
 	let { scheme }: { scheme: Scheme } = $props();
 
-	function fmtOklch(c: ColorValue): string {
-		const l = Math.round(c.channel('ok_l') * 1000) / 1000;
-		const ch = Math.round(c.channel('ok_c') * 10000) / 10000;
-		const h = Math.round(c.channel('ok_h') * 100) / 100;
-		return `oklch(${l} ${ch} ${h})`;
+	const r2 = (n: number, d: number) => Math.round(n * d) / d;
+	function fmtOklch(c: ColorValue) {
+		return `oklch(${r2(c.channel('ok_l'), 1000)} ${r2(c.channel('ok_c'), 10000)} ${r2(c.channel('ok_h'), 100)})`;
+	}
+	function fmtRgb(c: ColorValue) {
+		return `rgb(${Math.round(c.channel('r') * 255)} ${Math.round(c.channel('g') * 255)} ${Math.round(c.channel('b') * 255)})`;
+	}
+	function fmtHsl(c: ColorValue) {
+		return `hsl(${Math.round(c.channel('h'))} ${Math.round(c.channel('s') * 100)}% ${Math.round(c.channel('l') * 100)}%)`;
 	}
 	function fmtVal(v: DSLValue): string {
-		if (typeof v === 'number') return String(Math.round(v * 10000) / 10000);
+		if (typeof v === 'number') return String(r2(v, 10000));
 		if (Array.isArray(v)) return `[${v.length} items]`;
 		return String(v);
 	}
+
+	let copied = $state<string | null>(null);
+	function copy(text: string) {
+		navigator.clipboard?.writeText(text);
+		copied = text;
+		setTimeout(() => {
+			if (copied === text) copied = null;
+		}, 900);
+	}
+	const convs = (c: ColorValue) => [
+		['HEX', c.hex],
+		['OKLCH', fmtOklch(c)],
+		['RGB', fmtRgb(c)],
+		['HSL', fmtHsl(c)]
+	];
 </script>
 
 <div class="insp scroll">
 	{#if scheme.entries.length > 0}
+		<div class="palette">
+			{#each scheme.entries as e (e.name)}
+				<button
+					class="pal"
+					style="background: {e.color.toCSS()}"
+					title="{e.name} · {e.color.hex}"
+					onclick={() => copy(e.color.hex)}
+					aria-label="copy {e.name}"
+				></button>
+			{/each}
+		</div>
+
 		<div class="grid">
 			{#each scheme.entries as e (e.name)}
 				<div class="row">
-					<div class="sw" style="background: {e.color.toCSS()}">
-						<span class="sw-hex mono">{e.color.hex}</span>
-					</div>
+					<button
+						class="sw"
+						style="background: {e.color.toCSS()}"
+						onclick={() => copy(e.color.hex)}
+						title="copy hex"
+					>
+						{#if copied === e.color.hex}<span class="sw-copied">copied</span>{/if}
+					</button>
 					<div class="meta">
 						<div class="line1">
 							<span class="name">{e.name}</span>
@@ -36,10 +72,17 @@
 								<span class="badge badge-p3">P3</span>
 							{/if}
 						</div>
-						<div class="coord mono">{fmtOklch(e.color)}</div>
+						<div class="convs">
+							{#each convs(e.color) as [k, v] (k)}
+								<button class="conv" onclick={() => copy(v)} title="copy {k}">
+									<span class="conv-k">{k}</span>
+									<span class="conv-v mono">{copied === v ? 'copied!' : v}</span>
+								</button>
+							{/each}
+						</div>
 						{#if e.deps.length > 0}
 							<div class="deps">
-								depends on
+								<span class="deps-label">derives from</span>
 								{#each e.deps as d (d)}<span class="dep">{d}</span>{/each}
 							</div>
 						{/if}
@@ -48,18 +91,23 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="empty">No colors yet — define some in the editor.</p>
+		<div class="empty">
+			<div class="empty-title">No colors yet</div>
+			<div class="empty-sub">Define some colors in the editor to inspect them here.</div>
+		</div>
 	{/if}
 
 	{#if scheme.nonColorVars.length > 0}
 		<div class="values">
 			<div class="sec">Values</div>
-			{#each scheme.nonColorVars as v (v.name)}
-				<div class="val-row">
-					<span class="name">{v.name}</span>
-					<span class="val mono">{fmtVal(v.value)}</span>
-				</div>
-			{/each}
+			<div class="val-grid">
+				{#each scheme.nonColorVars as v (v.name)}
+					<div class="val-row">
+						<span class="name">{v.name}</span>
+						<span class="val mono">{fmtVal(v.value)}</span>
+					</div>
+				{/each}
+			</div>
 		</div>
 	{/if}
 </div>
@@ -71,6 +119,26 @@
 		overflow-y: auto;
 		padding: 14px;
 	}
+	.palette {
+		display: flex;
+		height: 44px;
+		border-radius: var(--radius-sm);
+		overflow: hidden;
+		border: 1px solid var(--border);
+		box-shadow: var(--shadow-sm);
+		margin-bottom: 14px;
+	}
+	.pal {
+		flex: 1;
+		min-width: 0;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		transition: flex 0.15s;
+	}
+	.pal:hover {
+		flex: 1.6;
+	}
 	.grid {
 		display: grid;
 		gap: 8px;
@@ -78,7 +146,7 @@
 	.row {
 		display: flex;
 		gap: 12px;
-		padding: 8px;
+		padding: 9px;
 		border-radius: var(--radius);
 		border: 1px solid var(--border);
 		background: var(--surface);
@@ -89,30 +157,34 @@
 		border-color: var(--border-strong);
 	}
 	.sw {
-		width: 76px;
+		position: relative;
+		width: 64px;
 		flex-shrink: 0;
 		align-self: stretch;
-		min-height: 52px;
+		min-height: 60px;
 		border-radius: var(--radius-sm);
 		border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-		display: flex;
-		align-items: flex-end;
-		justify-content: center;
-		padding-bottom: 4px;
+		cursor: pointer;
+		padding: 0;
 	}
-	.sw-hex {
+	.sw-copied {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		font-size: 10px;
-		font-weight: 600;
+		font-weight: 700;
 		color: #fff;
 		mix-blend-mode: difference;
-		opacity: 0.9;
 	}
 	.meta {
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
-		gap: 3px;
+		gap: 6px;
 		min-width: 0;
+		flex: 1;
 	}
 	.line1 {
 		display: flex;
@@ -123,10 +195,6 @@
 	.name {
 		font-weight: 600;
 		font-size: 13.5px;
-	}
-	.coord {
-		font-size: 11.5px;
-		color: var(--text-muted);
 	}
 	.badge {
 		font-size: 10px;
@@ -142,25 +210,73 @@
 		background: color-mix(in srgb, var(--accent) 18%, transparent);
 		color: var(--accent);
 	}
+	.convs {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 3px;
+	}
+	.conv {
+		display: flex;
+		align-items: baseline;
+		gap: 6px;
+		padding: 3px 7px;
+		border: none;
+		border-radius: var(--radius-xs);
+		background: var(--surface-2);
+		cursor: pointer;
+		text-align: left;
+		min-width: 0;
+		transition: background 0.12s;
+	}
+	.conv:hover {
+		background: var(--surface-3);
+	}
+	.conv-k {
+		font-size: 9px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		color: var(--text-faint);
+		width: 34px;
+		flex-shrink: 0;
+	}
+	.conv-v {
+		font-size: 11px;
+		color: var(--text-muted);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
 	.deps {
 		display: flex;
 		align-items: center;
 		gap: 5px;
 		flex-wrap: wrap;
-		font-size: 11px;
+	}
+	.deps-label {
+		font-size: 10.5px;
 		color: var(--text-faint);
 	}
 	.dep {
-		padding: 0 6px;
+		padding: 0 7px;
 		border-radius: 99px;
-		background: var(--surface-2);
-		color: var(--text-muted);
-		font-weight: 500;
+		background: var(--accent-soft);
+		color: var(--accent);
+		font-size: 10.5px;
+		font-weight: 600;
 	}
 	.empty {
+		padding: 40px 16px;
+		text-align: center;
+	}
+	.empty-title {
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--text-muted);
+	}
+	.empty-sub {
+		font-size: 12.5px;
 		color: var(--text-faint);
-		font-size: 13px;
-		padding: 8px;
+		margin-top: 4px;
 	}
 	.values {
 		margin-top: 18px;
@@ -173,17 +289,21 @@
 		color: var(--text-faint);
 		margin-bottom: 8px;
 	}
+	.val-grid {
+		display: grid;
+		gap: 4px;
+	}
 	.val-row {
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		padding: 6px 10px;
+		padding: 6px 11px;
 		border-radius: var(--radius-sm);
 		background: var(--surface-2);
-		margin-bottom: 4px;
 	}
 	.val {
 		font-size: 12px;
 		color: var(--text-muted);
+		margin-left: auto;
 	}
 </style>

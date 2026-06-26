@@ -4,7 +4,7 @@
 	import { simulateVision, visionSimulations } from '$lib/analysis/cvd';
 	import { wcagLevels, wcagColor } from '$lib/analysis/wcag';
 
-	const demos = ['Landing Page', 'Dashboard', 'Blog'];
+	const demos = ['Landing', 'Dashboard', 'Blog'];
 	let demoIndex = $state(0);
 	let panelOpen = $state(true);
 
@@ -53,18 +53,21 @@
 
 <div class="preview-root">
 	<div class="pv-toolbar">
-		<select class="pv-select" bind:value={demoIndex}>
-			{#each demos as d, i (d)}<option value={i}>{d}</option>{/each}
-		</select>
-		<select class="pv-select" bind:value={app.visionSim}>
+		<div class="seg">
+			{#each demos as d, i (d)}
+				<button class="seg-item {demoIndex === i ? 'active' : ''}" onclick={() => (demoIndex = i)}>{d}</button>
+			{/each}
+		</div>
+		<select class="select" bind:value={app.visionSim}>
 			{#each visionSimulations as sim (sim.value)}<option value={sim.value}>{sim.label}</option>{/each}
 		</select>
-		<button class="pv-btn" onclick={() => (panelOpen = !panelOpen)}>
+		<div class="pv-spacer"></div>
+		<span class="pv-fails" class:bad={fails > 0}>
+			{#if fails > 0}{fails} of {app.audit.length} failing{:else}all {app.audit.length} pass{/if}
+		</span>
+		<button class="btn" onclick={() => (panelOpen = !panelOpen)}>
 			{panelOpen ? 'Hide roles' : 'Roles & audit'}
 		</button>
-		<span class="pv-fails" style="color: {fails > 0 ? 'var(--danger)' : 'var(--ok)'}">
-			{fails}/{app.audit.length} failing
-		</span>
 	</div>
 
 	<div class="pv-body">
@@ -296,34 +299,24 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		padding: 8px 14px;
+		padding: 9px 14px;
 		border-bottom: 1px solid var(--border);
 		flex-shrink: 0;
 	}
-	.pv-select {
-		border: 1px solid var(--border);
-		border-radius: 4px;
-		background: var(--surface-2);
-		color: var(--text);
-		padding: 3px 6px;
-		font-size: 12px;
-	}
-	.pv-btn {
-		padding: 3px 10px;
-		border: 1px solid var(--border);
-		border-radius: 4px;
-		background: none;
-		color: var(--text);
-		font-size: 12px;
-		cursor: pointer;
-	}
-	.pv-btn:hover {
-		border-color: var(--text-faint);
+	.pv-spacer {
+		flex: 1;
 	}
 	.pv-fails {
-		margin-left: auto;
-		font-family: monospace;
-		font-size: 12px;
+		padding: 2px 10px;
+		border-radius: 99px;
+		font-size: 11px;
+		font-weight: 600;
+		background: color-mix(in srgb, var(--ok) 16%, transparent);
+		color: var(--ok);
+	}
+	.pv-fails.bad {
+		background: color-mix(in srgb, var(--danger) 16%, transparent);
+		color: var(--danger);
 	}
 	.pv-body {
 		display: flex;

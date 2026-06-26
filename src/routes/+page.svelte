@@ -78,6 +78,9 @@
 	function endResize() {
 		resizing = false;
 	}
+	function resetWidth() {
+		ui.editorWidth = 46;
+	}
 </script>
 
 <svelte:head><title>Chromatics</title></svelte:head>
@@ -149,7 +152,11 @@
 				onpointerdown={startResize}
 				onpointermove={onResize}
 				onpointerup={endResize}
-			></div>
+				ondblclick={resetWidth}
+				title="Drag to resize · double-click to reset"
+			>
+				<div class="grip"><span></span><span></span><span></span></div>
+			</div>
 		{:else}
 			<button class="editor-rail" onclick={() => (ui.editorCollapsed = false)} title="Expand editor">
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
@@ -286,23 +293,45 @@
 	}
 
 	.resizer {
-		width: 7px;
+		width: 12px;
 		flex-shrink: 0;
 		cursor: col-resize;
 		background: transparent;
 		position: relative;
-		margin: 0 -3px;
+		margin: 0 -6px;
 		z-index: 5;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
-	.resizer::after {
-		content: '';
-		position: absolute;
-		inset: 0 3px;
-		border-radius: 2px;
-		transition: background 0.12s;
+	.grip {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 3px;
+		width: 7px;
+		height: 42px;
+		border-radius: 99px;
+		background: var(--border-strong);
+		transition:
+			background 0.12s,
+			height 0.12s;
 	}
-	.resizer:hover::after {
+	.grip span {
+		width: 3px;
+		height: 3px;
+		border-radius: 50%;
+		background: var(--surface);
+	}
+	.resizer:hover .grip,
+	.workspace.resizing .grip {
 		background: var(--accent);
+		height: 58px;
+	}
+	.resizer:hover .grip span,
+	.workspace.resizing .grip span {
+		background: var(--accent-fg);
 	}
 
 	.editor-rail {

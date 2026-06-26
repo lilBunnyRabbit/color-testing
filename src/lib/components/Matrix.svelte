@@ -82,17 +82,23 @@
 
 <div class="matrix-root">
 	<div class="matrix-toolbar">
-		<span class="tb-count">{colors.length} colors</span>
-		<label class="tb-opacity">
-			<span>fg {app.fgOpacity}%</span>
-			<input type="range" min="0" max="100" bind:value={app.fgOpacity} />
+		<label class="tb-field">
+			<span class="tb-label">fg opacity</span>
+			<input class="tb-range" type="range" min="0" max="100" bind:value={app.fgOpacity} />
+			<span class="tb-val mono">{app.fgOpacity}%</span>
 		</label>
-		<select class="tb-select" bind:value={app.visionSim}>
+		<select class="select" bind:value={app.visionSim}>
 			{#each visionSimulations as sim (sim.value)}
 				<option value={sim.value}>{sim.label}</option>
 			{/each}
 		</select>
-		<button class="tb-btn" onclick={() => infoDialogEl?.showModal()} disabled={!colors.length}>
+		<div class="legend">
+			<span class="lg"><i style="background: {wcagColor('AAA')}"></i>AAA</span>
+			<span class="lg"><i style="background: {wcagColor('AA')}"></i>AA</span>
+			<span class="lg"><i style="background: {wcagColor('Fail')}"></i>Fail</span>
+		</div>
+		<div class="tb-spacer"></div>
+		<button class="btn" onclick={() => infoDialogEl?.showModal()} disabled={!colors.length}>
 			Info / Export
 		</button>
 	</div>
@@ -304,48 +310,51 @@
 	.matrix-toolbar {
 		display: flex;
 		align-items: center;
-		gap: 14px;
-		padding: 8px 14px;
+		gap: 12px;
+		padding: 9px 14px;
 		border-bottom: 1px solid var(--border);
 		flex-shrink: 0;
 	}
-	.tb-count {
-		font-size: 12px;
-		color: var(--text-muted);
+	.tb-spacer {
+		flex: 1;
 	}
-	.tb-opacity {
+	.tb-field {
 		display: flex;
 		align-items: center;
-		gap: 6px;
-		font-size: 12px;
-		color: var(--text);
-	}
-	.tb-opacity input[type='range'] {
-		width: 90px;
-	}
-	.tb-select {
-		border: 1px solid var(--border);
-		border-radius: 4px;
-		background: var(--surface-2);
-		color: var(--text);
-		padding: 3px 6px;
-		font-size: 12px;
-	}
-	.tb-btn {
+		gap: 8px;
 		padding: 3px 10px;
 		border: 1px solid var(--border);
-		border-radius: 4px;
-		background: none;
+		border-radius: var(--radius-xs);
+		background: var(--surface-2);
+	}
+	.tb-label {
+		font-size: 11px;
+		color: var(--text-muted);
+	}
+	.tb-range {
+		width: 84px;
+		accent-color: var(--accent);
+	}
+	.tb-val {
+		font-size: 11px;
 		color: var(--text);
-		font-size: 12px;
-		cursor: pointer;
+		width: 30px;
 	}
-	.tb-btn:hover:not(:disabled) {
-		border-color: var(--text-faint);
+	.legend {
+		display: flex;
+		gap: 12px;
 	}
-	.tb-btn:disabled {
-		opacity: 0.4;
-		cursor: default;
+	.lg {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		font-size: 11px;
+		color: var(--text-muted);
+	}
+	.lg i {
+		width: 9px;
+		height: 9px;
+		border-radius: 3px;
 	}
 	.matrix-empty {
 		padding: 32px;
@@ -395,12 +404,16 @@
 		min-width: 9rem;
 	}
 	.header-swatch-wide {
-		width: 100%;
-		height: 12px;
+		width: calc(100% - 8px);
+		height: 13px;
+		margin: 2px 4px 4px;
+		border-radius: 4px;
 		flex-shrink: 0;
 	}
 	.row-header-swatch {
-		width: 12px;
+		width: 13px;
+		margin: 4px;
+		border-radius: 4px;
 		flex-shrink: 0;
 	}
 	.row-header-text {
