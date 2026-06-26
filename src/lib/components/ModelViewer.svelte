@@ -5,7 +5,6 @@
 
 	let { seed = '#3aa0ff' }: { seed?: string } = $props();
 
-	// Models we can plot: a real conversion + exactly three channels + a ctor.
 	const FAMILY_LABEL: Record<string, string> = {
 		'perceptual-cylindrical': 'Perceptual cylindrical',
 		lab: 'Lab family',
@@ -24,10 +23,19 @@
 		models: pickable.filter((m) => m.family === f).sort((a, b) => a.label.localeCompare(b.label))
 	})).filter((g) => g.models.length);
 
+	const DENSITY = [
+		{ label: 'Coarse', n: 10 },
+		{ label: 'Normal', n: 16 },
+		{ label: 'Dense', n: 22 },
+		{ label: 'Fine', n: 30 },
+		{ label: 'Max', n: 40 }
+	];
+
 	let modelId = $state('oklch');
+	let density = $state(22);
 	let vals = $state<number[]>([0.7, 0.15, 250]);
-	let yaw = $state(-0.6);
-	let pitch = $state(0.45);
+	let yaw = $state(-0.7);
+	let pitch = $state(0.5);
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let dragging = false;
 	let lastX = 0;
@@ -35,14 +43,42 @@
 
 	const def = $derived(getModel(modelId) as ModelDef);
 
-	/** Put a lightness-like channel on the vertical axis; others on x/z. */
-	function axes(d: ModelDef): [number, number, number] {
-		const li = d.channels.findIndex(
-			(c) => /light|lumin|value|tone|bright|intens/i.test(c.label) || /^(l|j|i|t|v|p)$/i.test(c.localKey)
+	type Vec3 = { x: number; y: number; z: number };
+
+	type CylInfo =
+		| { hueIdx: number; kind: 'lc'; lightIdx: number; chromaIdx: number }
+		| { hueIdx: number; kind: 'wb'; wIdx: number; bIdx: number };
+
+	/** How to arrange a hue-based model as a cylinder/cone, or null if cartesian. */
+	function cylInfo(d: ModelDef): CylInfo | null {
+		const ch = d.channels;
+		const hueIdx = ch.findIndex((c) => Math.abs(c.range[1] - 360) < 1 || c.localKey === 'h');
+		if (hueIdx < 0) return null;
+		// hue + chroma + lightness (OKLCH, HSL, LCh, HCT, CAM16, …)
+		const lightIdx = ch.findIndex(
+			(c, i) =>
+				i !== hueIdx &&
+				(/light|lumin|value|tone|bright|intens/i.test(c.label) || /^(l|j|v|t)$/i.test(c.localKey))
 		);
-		if (li < 0) return [0, 1, 2];
-		const rest = [0, 1, 2].filter((i) => i !== li);
-		return [rest[0], li, rest[1]];
+		if (lightIdx >= 0) {
+			const chromaIdx = [0, 1, 2].find((i) => i !== hueIdx && i !== lightIdx)!;
+			return { hueIdx, kind: 'lc', lightIdx, chromaIdx };
+		}
+		// hue + whiteness + blackness (HWB) → a bicone
+		const wIdx = ch.findIndex((c, i) => i !== hueIdx && (c.localKey === 'w' || /white/i.test(c.label)));
+		const bIdx = ch.findIndex((c, i) => i !== hueIdx && (c.localKey === 'b' || /black/i.test(c.label)));
+		if (wIdx >= 0 && bIdx >= 0 && wIdx !== bIdx) return { hueIdx, kind: 'wb', wIdx, bIdx };
+		return null;
+	}
+	const isCyl = $derived(cylInfo(def) !== null);
+	/** For cartesian models: which channel goes on the vertical axis, plus x/z. */
+	function boxAxes(d: ModelDef): [number, number, number] {
+		const li = d.channels.findIndex(
+			(c) => /light|lumin|value|tone|bright|intens/i.test(c.label) || /^(l|j|i|t|v)$/i.test(c.localKey)
+		);
+		const yi = li < 0 ? 1 : li;
+		const rest = [0, 1, 2].filter((i) => i !== yi);
+		return [rest[0], yi, rest[1]];
 	}
 
 	// Re-seed the sliders whenever the model changes.
@@ -68,34 +104,100 @@
 	const curHex = $derived(current?.hex ?? '#000000');
 	const inGamut = $derived(current?.inGamut ?? false);
 
-	const N = 7;
-	const samples = $derived.by(() => {
-		const d = def;
-		const chs = d.channels;
-		const grid = (ci: number) => {
-			const [lo, hi] = chs[ci].range;
-			return Array.from({ length: N }, (_, k) => lo + ((hi - lo) * k) / (N - 1));
-		};
-		const norm = (ci: number, v: number) => {
-			const [lo, hi] = chs[ci].range;
+	interface Prim {
+		v: Vec3[];
+		n: Vec3;
+		rgb: [number, number, number];
+	}
+
+	/** Map any color into this model's 3-D layout (polar for cylindrical, box else). */
+	function layoutFor(d: ModelDef): (cv: ColorValue) => Vec3 {
+		const ch = d.channels;
+		const info = cylInfo(d);
+		if (info) {
+			const [hLo, hHi] = ch[info.hueIdx].range;
+			const angle = (cv: ColorValue) => ((cv.channel(ch[info.hueIdx].key) - hLo) / (hHi - hLo)) * 2 * Math.PI;
+			if (info.kind === 'lc') {
+				const [lLo, lHi] = ch[info.lightIdx].range;
+				const [cLo, cHi] = ch[info.chromaIdx].range;
+				return (cv) => {
+					const L = cv.channel(ch[info.lightIdx].key);
+					const C = cv.channel(ch[info.chromaIdx].key);
+					const rad = Math.max(0, (C - cLo) / (cHi - cLo)) * 0.5;
+					const th = angle(cv);
+					return { x: rad * Math.cos(th), y: (L - lLo) / (lHi - lLo) - 0.5, z: rad * Math.sin(th) };
+				};
+			}
+			// whiteness/blackness bicone: pure hue at the equator, white top, black bottom
+			const [wLo, wHi] = ch[info.wIdx].range;
+			const [bLo, bHi] = ch[info.bIdx].range;
+			return (cv) => {
+				const W = (cv.channel(ch[info.wIdx].key) - wLo) / (wHi - wLo);
+				const B = (cv.channel(ch[info.bIdx].key) - bLo) / (bHi - bLo);
+				const rad = Math.max(0, 1 - W - B) * 0.5;
+				const th = angle(cv);
+				return { x: rad * Math.cos(th), y: (W - B) / 2, z: rad * Math.sin(th) };
+			};
+		}
+		const [xi, yi, zi] = boxAxes(d);
+		const nrm = (ci: number, v: number) => {
+			const [lo, hi] = ch[ci].range;
 			return hi === lo ? 0 : (v - lo) / (hi - lo) - 0.5;
 		};
-		const [xi, yi, zi] = axes(d);
-		const out: { x: number; y: number; z: number; hex: string; inG: boolean }[] = [];
-		const g0 = grid(0), g1 = grid(1), g2 = grid(2);
-		for (const v0 of g0)
-			for (const v1 of g1)
-				for (const v2 of g2) {
-					const v = [v0, v1, v2];
-					try {
-						const cv = ColorValue.from(d.ctor!.build(v));
-						out.push({ x: norm(xi, v[xi]), y: norm(yi, v[yi]), z: norm(zi, v[zi]), hex: cv.hex, inG: cv.inGamut });
-					} catch {
-						/* skip invalid */
-					}
+		return (cv) => ({
+			x: nrm(xi, cv.channel(ch[xi].key)),
+			y: nrm(yi, cv.channel(ch[yi].key)),
+			z: nrm(zi, cv.channel(ch[zi].key))
+		});
+	}
+
+	// ── geometry: the sRGB gamut as a solid, mapped into the model's space ──
+	const geo = $derived.by(() => buildGamutSurface(def, density));
+
+	function buildGamutSurface(d: ModelDef, dens: number): Prim[] {
+		const G = Math.max(6, Math.round(dens * 0.9));
+		const layout = layoutFor(d);
+		const node = (r: number, g: number, b: number) => ({
+			p: layout(ColorValue.from({ mode: 'rgb', r, g, b } as never)),
+			rgb: [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)] as [number, number, number]
+		});
+		// six faces of the unit sRGB cube
+		const faces: ((u: number, v: number) => [number, number, number])[] = [
+			(u, v) => [0, u, v], (u, v) => [1, u, v],
+			(u, v) => [u, 0, v], (u, v) => [u, 1, v],
+			(u, v) => [u, v, 0], (u, v) => [u, v, 1]
+		];
+		const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+		const cross = (a: Vec3, b: Vec3): Vec3 => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
+		const normal = (a: Vec3, b: Vec3, c: Vec3): Vec3 => {
+			const n = cross(sub(b, a), sub(c, a));
+			const len = Math.hypot(n.x, n.y, n.z) || 1;
+			return { x: n.x / len, y: n.y / len, z: n.z / len };
+		};
+		const avg = (cs: [number, number, number][]): [number, number, number] => [
+			cs.reduce((s, c) => s + c[0], 0) / cs.length,
+			cs.reduce((s, c) => s + c[1], 0) / cs.length,
+			cs.reduce((s, c) => s + c[2], 0) / cs.length
+		];
+		const prims: Prim[] = [];
+		for (const f of faces) {
+			const grid: { p: Vec3; rgb: [number, number, number] }[][] = [];
+			for (let i = 0; i <= G; i++) {
+				grid[i] = [];
+				for (let j = 0; j <= G; j++) {
+					const [r, g, b] = f(i / G, j / G);
+					grid[i][j] = node(r, g, b);
 				}
-		return out;
-	});
+			}
+			for (let i = 0; i < G; i++) {
+				for (let j = 0; j < G; j++) {
+					const a = grid[i][j], b = grid[i][j + 1], c = grid[i + 1][j + 1], e = grid[i + 1][j];
+					prims.push({ v: [a.p, b.p, c.p, e.p], n: normal(a.p, b.p, e.p), rgb: avg([a.rgb, b.rgb, c.rgb, e.rgb]) });
+				}
+			}
+		}
+		return prims;
+	}
 
 	function draw() {
 		const cv = canvas;
@@ -109,57 +211,45 @@
 		cv.height = h * dpr;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		ctx.clearRect(0, 0, w, h);
-		const cx = w / 2, cy = h / 2, scale = Math.min(w, h) * 0.58;
+		const cx = w / 2, cy = h / 2, scale = Math.min(w, h) * 0.64;
 		const cosY = Math.cos(yaw), sinY = Math.sin(yaw), cosX = Math.cos(pitch), sinX = Math.sin(pitch);
-		const project = (px: number, py: number, pz: number) => {
-			const x1 = px * cosY - pz * sinY;
-			const z1 = px * sinY + pz * cosY;
-			const y2 = py * cosX - z1 * sinX;
-			const z2 = py * sinX + z1 * cosX;
-			return { sx: cx + x1 * scale, sy: cy - y2 * scale, depth: z2 };
+		const rot = (p: Vec3): Vec3 => {
+			const x1 = p.x * cosY - p.z * sinY;
+			const z1 = p.x * sinY + p.z * cosY;
+			const y2 = p.y * cosX - z1 * sinX;
+			const z2 = p.y * sinX + z1 * cosX;
+			return { x: x1, y: y2, z: z2 };
 		};
-		const grid = ui.theme === 'dark' ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.14)';
-		const txt = ui.theme === 'dark' ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)';
-		const [xi, yi, zi] = axes(def);
-		// axis lines + labels
-		const axisDefs: [number, number, number, string][] = [
-			[1, 0, 0, def.channels[xi].localKey],
-			[0, 1, 0, def.channels[yi].localKey],
-			[0, 0, 1, def.channels[zi].localKey]
-		];
-		ctx.lineWidth = 1;
-		ctx.font = '600 10px ui-monospace, monospace';
-		for (const [ax, ay, az, label] of axisDefs) {
-			const a = project(-ax * 0.5, -ay * 0.5, -az * 0.5);
-			const b = project(ax * 0.5, ay * 0.5, az * 0.5);
-			ctx.strokeStyle = grid;
-			ctx.beginPath();
-			ctx.moveTo(a.sx, a.sy);
-			ctx.lineTo(b.sx, b.sy);
-			ctx.stroke();
-			ctx.fillStyle = txt;
-			ctx.fillText('.' + label, b.sx + 3, b.sy + 3);
-		}
-		// points, back-to-front
-		const proj = samples
-			.map((p) => ({ ...project(p.x, p.y, p.z), hex: p.hex, inG: p.inG }))
+		const drawn = geo
+			.map((pr) => {
+				const rv = pr.v.map(rot);
+				const rn = rot(pr.n);
+				const depth = rv.reduce((s, p) => s + p.z, 0) / rv.length;
+				const shade = 0.74 + 0.26 * Math.min(1, Math.abs(rn.z));
+				return { rv, depth, shade, rgb: pr.rgb };
+			})
 			.sort((a, b) => a.depth - b.depth);
-		for (const p of proj) {
-			ctx.globalAlpha = p.inG ? 1 : 0.1;
-			ctx.fillStyle = p.hex;
+		for (const pr of drawn) {
+			const col = `rgb(${(pr.rgb[0] * pr.shade) | 0},${(pr.rgb[1] * pr.shade) | 0},${(pr.rgb[2] * pr.shade) | 0})`;
+			ctx.fillStyle = col;
+			ctx.strokeStyle = col;
+			ctx.lineWidth = 1;
 			ctx.beginPath();
-			ctx.arc(p.sx, p.sy, p.inG ? 4.5 : 3, 0, 6.2832);
+			pr.rv.forEach((p, i) => {
+				const sx = cx + p.x * scale, sy = cy - p.y * scale;
+				if (i === 0) ctx.moveTo(sx, sy);
+				else ctx.lineTo(sx, sy);
+			});
+			ctx.closePath();
 			ctx.fill();
+			ctx.stroke();
 		}
-		ctx.globalAlpha = 1;
-		// current marker
-		const norm = (ci: number, v: number) => {
-			const [lo, hi] = def.channels[ci].range;
-			return hi === lo ? 0 : (v - lo) / (hi - lo) - 0.5;
-		};
-		const m = project(norm(xi, vals[xi]), norm(yi, vals[yi]), norm(zi, vals[zi]));
+
+		// current-color marker, placed in the same layout
+		const mp = layoutFor(def)(current ?? ColorValue.from({ mode: 'rgb', r: 0, g: 0, b: 0 } as never));
+		const m = rot(mp);
 		ctx.beginPath();
-		ctx.arc(m.sx, m.sy, 9, 0, 6.2832);
+		ctx.arc(cx + m.x * scale, cy - m.y * scale, 8, 0, 6.2832);
 		ctx.fillStyle = curHex;
 		ctx.fill();
 		ctx.lineWidth = 2.5;
@@ -168,8 +258,7 @@
 	}
 
 	$effect(() => {
-		// track deps then draw
-		void samples;
+		void geo;
 		void vals;
 		void yaw;
 		void pitch;
@@ -187,29 +276,43 @@
 	function onMove(e: PointerEvent) {
 		if (!dragging) return;
 		yaw += (e.clientX - lastX) * 0.01;
-		pitch = Math.max(-1.4, Math.min(1.4, pitch + (e.clientY - lastY) * 0.01));
+		pitch += (e.clientY - lastY) * 0.01; // free orbit, no clamp
 		lastX = e.clientX;
 		lastY = e.clientY;
 	}
 	function onUp() {
 		dragging = false;
 	}
+	function reset() {
+		yaw = -0.7;
+		pitch = 0.5;
+	}
 </script>
 
 <div class="mv">
 	<div class="mv-controls">
-		<label class="mv-select">
-			<span>Model</span>
-			<select class="select" bind:value={modelId}>
-				{#each grouped as g (g.label)}
-					<optgroup label={g.label}>
-						{#each g.models as m (m.id)}
-							<option value={m.id}>{m.label}</option>
-						{/each}
-					</optgroup>
-				{/each}
-			</select>
-		</label>
+		<div class="mv-row">
+			<label class="mv-select">
+				<span>Model</span>
+				<select class="select" bind:value={modelId}>
+					{#each grouped as g (g.label)}
+						<optgroup label={g.label}>
+							{#each g.models as m (m.id)}
+								<option value={m.id}>{m.label}</option>
+							{/each}
+						</optgroup>
+					{/each}
+				</select>
+			</label>
+			<label class="mv-select mv-density">
+				<span>Resolution</span>
+				<select class="select" bind:value={density}>
+					{#each DENSITY as d (d.n)}
+						<option value={d.n}>{d.label}</option>
+					{/each}
+				</select>
+			</label>
+		</div>
 
 		{#if MODEL_DOCS[modelId]?.about}
 			<p class="mv-about">{MODEL_DOCS[modelId]?.about}</p>
@@ -230,9 +333,6 @@
 						step={(ch.range[1] - ch.range[0]) / 240}
 						bind:value={vals[i]}
 					/>
-					<div class="mv-range">
-						<span>{+ch.range[0].toFixed(2)}</span><span>{+ch.range[1].toFixed(2)}</span>
-					</div>
 				</div>
 			{/each}
 		</div>
@@ -251,8 +351,9 @@
 			onpointermove={onMove}
 			onpointerup={onUp}
 			onpointercancel={onUp}
+			ondblclick={reset}
 		></canvas>
-		<span class="mv-hint">drag to rotate · faint dots are out of gamut</span>
+		<span class="mv-hint">{isCyl ? 'cylindrical' : 'cartesian'} layout · drag to rotate · double-click resets</span>
 	</div>
 </div>
 
@@ -272,9 +373,24 @@
 		min-width: 0;
 		overflow-y: auto;
 	}
+	.mv-row {
+		display: flex;
+		gap: 8px;
+	}
+	.mv-row .mv-select {
+		flex: 1;
+		min-width: 0;
+	}
+	.mv-density {
+		flex: 0 0 auto;
+		min-width: 120px;
+	}
 	.mv-select {
 		display: grid;
 		gap: 4px;
+	}
+	.mv-select .select {
+		width: 100%;
 	}
 	.mv-select span {
 		font-size: 10px;
@@ -324,13 +440,6 @@
 	.mv-slider input[type='range'] {
 		width: 100%;
 		accent-color: var(--accent);
-	}
-	.mv-range {
-		display: flex;
-		justify-content: space-between;
-		font-size: 9px;
-		color: var(--text-faint);
-		font-family: 'JetBrains Mono', ui-monospace, monospace;
 	}
 	.mv-result {
 		display: flex;

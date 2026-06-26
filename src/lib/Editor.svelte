@@ -8,6 +8,7 @@
 	import { tags } from '@lezer/highlight';
 	import { chromaDSL } from '$lib/dsl/lang.js';
 	import { autocompletion, type CompletionSource } from '@codemirror/autocomplete';
+	import { highlightSelectionMatches } from '@codemirror/search';
 
 	let {
 		value = $bindable(''),
@@ -66,6 +67,10 @@
 		'.cm-matchingBracket': {
 			backgroundColor: 'var(--cm-bracket)',
 			outline: 'none'
+		},
+		'.cm-selectionMatch': {
+			backgroundColor: 'color-mix(in srgb, var(--accent) 24%, transparent)',
+			borderRadius: '2px'
 		},
 		'.cm-tooltip': {
 			backgroundColor: 'var(--surface)',
@@ -169,6 +174,7 @@
 					bracketMatching(),
 					highlightActiveLine(),
 					highlightActiveLineGutter(),
+					highlightSelectionMatches({ highlightWordAroundCursor: true, minSelectionLength: 1 }),
 					keymap.of([...defaultKeymap, ...historyKeymap]),
 					chromaDSL,
 					...(completionSource
