@@ -3,7 +3,7 @@
  * the model engine. (P2 will generate the constructor/builtin set directly from
  * the manifest; for now it mirrors today's surface on top of ColorValue.)
  */
-import { OKLCH, HSL, RGB, hex, type DSLValue } from '../models/index.js';
+import { OKLCH, OKLAB, HSL, HSV, HWB, LAB, LCH, RGB, P3, hex, type DSLValue } from '../models/index.js';
 import { num, color, oklchMix } from '../models/util.js';
 import { wcagContrast, differenceCiede2000 } from '../models/registry.js';
 
@@ -12,8 +12,14 @@ export function createEnvironment(): Map<string, DSLValue> {
 
 	// Color constructors (each yields the same canonical ColorValue)
 	env.set('OKLCH', OKLCH);
+	env.set('OKLAB', OKLAB);
 	env.set('HSL', HSL);
+	env.set('HSV', HSV);
+	env.set('HWB', HWB);
+	env.set('LAB', LAB);
+	env.set('LCH', LCH);
 	env.set('RGB', RGB);
+	env.set('P3', P3);
 	env.set('hex', hex);
 
 	// Free functions

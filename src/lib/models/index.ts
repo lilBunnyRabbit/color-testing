@@ -24,8 +24,14 @@ function ctor(id: string) {
 }
 
 export const OKLCH = ctor('oklch');
+export const OKLAB = ctor('oklab');
 export const HSL = ctor('hsl');
+export const HSV = ctor('hsv');
+export const HWB = ctor('hwb');
+export const LAB = ctor('lab');
+export const LCH = ctor('lch');
 export const RGB = ctor('srgb');
+export const P3 = ctor('p3');
 
 export function hex(s: DSLValue): ColorValue {
 	const parsed = parse(str(s));
