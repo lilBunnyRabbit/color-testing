@@ -51,3 +51,32 @@ describe('long-tail models', () => {
 		expect(r.errors[0].message).toContain('@lilbunnyrabbit/chromatics');
 	});
 });
+
+describe('expanded model set', () => {
+	test('wide-gamut RGB + native ΔE + native hue rotation', () => {
+		const r = evaluate(
+			`b = OKLCH(0.6, 0.13, 264)
+g = A98(0.3, 0.7, 0.2)
+inA98 = b.a98.isInGamut
+dz = b.jab.deltaEz(g)
+d99 = b.dlab.deltaE99(g)
+duv = b.luv.deltaEuv(g)
+rot = b.okhsl.rotateHue(60)`
+		);
+		expect(r.errors).toEqual([]);
+		expect(typeof r.variables.get('inA98')!.value).toBe('boolean');
+		expect(r.variables.get('dz')!.value).toBeGreaterThan(0);
+		expect(r.variables.get('d99')!.value).toBeGreaterThan(0);
+		expect(r.variables.get('duv')!.value).toBeGreaterThan(0);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hex = (n: string) => (r.variables.get(n)!.value as any).hex;
+		expect(hex('rot')).not.toBe(hex('b'));
+	});
+
+	test('color systems advertise their lookups but throw actionably', () => {
+		const r = evaluate('b = OKLCH(0.6, 0.13, 264)\nx = b.pantone.nearest()\nok = b.lighten(0.1)');
+		expect(r.errors.length).toBe(1);
+		expect(r.errors[0].message).toContain('@lilbunnyrabbit/chromatics');
+		expect(r.variables.get('ok')).toBeDefined();
+	});
+});

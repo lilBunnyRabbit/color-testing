@@ -16,6 +16,7 @@ import {
 	differenceCie76,
 	differenceCie94,
 	differenceCmc,
+	differenceEuclidean,
 	type CuloriColor
 } from './registry';
 import type { MethodDef } from './types';
@@ -185,6 +186,35 @@ export const RGB_OPS: MethodDef[] = [
 ];
 
 // --- Lab family: the ΔE difference formulas ---
+
+/** Rotate hue natively in a model's own space (its characteristic move). */
+export function mkRotateHueNative(mode: string): MethodDef {
+	return method(
+		'rotateHue',
+		[p('degrees')],
+		'color',
+		'Rotate hue within this model space',
+		(self, [d]) => {
+			const c = self.project(mode) as unknown as Record<string, number | undefined>;
+			return ColorValue.from({ ...c, h: wrapHue((c.h ?? 0) + num(d)) } as unknown as CuloriColor);
+		}
+	);
+}
+
+/** A model's native Euclidean ΔE (e.g. ΔEz for JzAzBz, ΔE99 for DIN99o). */
+export function mkDeltaEuclidean(name: string, mode: string, doc: string): MethodDef {
+	return method(
+		name,
+		[p('other', 'color')],
+		'number',
+		doc,
+		(self, [o]) =>
+			differenceEuclidean(mode as Parameters<typeof differenceEuclidean>[0])(
+				self.project(mode),
+				color(o).project(mode)
+			)
+	);
+}
 
 export const LAB_OPS: MethodDef[] = [
 	method(

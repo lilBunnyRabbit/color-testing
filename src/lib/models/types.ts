@@ -13,6 +13,8 @@ export type Family =
 	| 'rgb'
 	| 'subtractive'
 	| 'tristimulus'
+	| 'video'
+	| 'system'
 	| 'root';
 
 export interface ChannelDef {

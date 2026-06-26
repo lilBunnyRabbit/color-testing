@@ -14,7 +14,13 @@ import './srgb';
 import './linear-srgb';
 import './display-p3';
 import './xyz';
+// Extra backed models (wide-gamut RGB, more perceptual / hue / video spaces).
+import './rgb-wide';
+import './perceptual-extra';
+import './hue-extra';
+import './video';
 // Deferred (backed:false) — advertise in docs/autocomplete, throw on use.
 import './cmyk';
 import './hct';
 import './hsluv';
+import './systems';

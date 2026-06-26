@@ -9,9 +9,22 @@
 		lab: 'Lab family (ΔE)',
 		hue: 'Hue family',
 		rgb: 'RGB family (a11y · CVD)',
-		subtractive: 'Subtractive'
+		tristimulus: 'Tristimulus',
+		subtractive: 'Subtractive',
+		video: 'Video / broadcast',
+		system: 'Color systems'
 	};
-	const FAMILY_ORDER = ['root', 'perceptual-cylindrical', 'lab', 'hue', 'rgb', 'subtractive'];
+	const FAMILY_ORDER = [
+		'root',
+		'perceptual-cylindrical',
+		'lab',
+		'hue',
+		'rgb',
+		'tristimulus',
+		'video',
+		'subtractive',
+		'system'
+	];
 
 	const models = [...manifest.models].sort(
 		(a, b) => FAMILY_ORDER.indexOf(a.family) - FAMILY_ORDER.indexOf(b.family)
