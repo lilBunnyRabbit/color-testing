@@ -6,6 +6,7 @@
 	import Docs from '$lib/components/Docs.svelte';
 	import ExportPanel from '$lib/components/ExportPanel.svelte';
 	import { app } from '$lib/state/app.svelte';
+	import { ui, type Tab } from '$lib/state/ui.svelte';
 	import { chromaCompletions } from '$lib/dsl/complete';
 	import { encodeHash, decodeHash } from '$lib/persistence/url-hash';
 	import { saveLast, loadLast, saveScheme, loadScheme, listSchemes } from '$lib/persistence/local-storage';
@@ -15,22 +16,22 @@
 	const completion = chromaCompletions(() => app.result.order);
 	let showDocs = $state(false);
 
-	const EXAMPLES: Record<string, string> = Object.fromEntries(
-		examples.map((e) => [e.name, e.source])
-	);
+	const EXAMPLES: Record<string, string> = Object.fromEntries(examples.map((e) => [e.name, e.source]));
 	const exampleNames = examples.map((e) => e.name);
-
 	let currentExample = $state(exampleNames[0]);
 	if (app.source === '') app.source = examples[0].source;
 
-	type Tab = 'inspector' | 'matrix' | 'preview' | 'export';
-	let tab = $state<Tab>('inspector');
+	const TABS: { id: Tab; label: string }[] = [
+		{ id: 'inspector', label: 'Inspector' },
+		{ id: 'matrix', label: 'Matrix' },
+		{ id: 'preview', label: 'Preview' },
+		{ id: 'export', label: 'Export' }
+	];
 
 	let savedNames = $state<string[]>([]);
 	let shareLabel = $state('Share');
 
 	onMount(() => {
-		// Load priority: URL hash > last autosave > default example.
 		const fromHash = decodeHash(location.hash);
 		if (fromHash) app.source = fromHash.source;
 		else {
@@ -50,132 +51,297 @@
 		shareLabel = 'Copied!';
 		setTimeout(() => (shareLabel = 'Share'), 1200);
 	}
-
 	function save() {
 		const name = prompt('Save scheme as:');
 		if (!name) return;
 		saveScheme(name, app.source);
 		savedNames = listSchemes();
 	}
-
 	function loadNamed(e: Event) {
 		const sel = e.target as HTMLSelectElement;
 		const src = loadScheme(sel.value);
 		if (src != null) app.source = src;
 		sel.value = '';
 	}
+
+	// --- resizable editor ---
+	let resizing = $state(false);
+	function startResize(e: PointerEvent) {
+		resizing = true;
+		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+	}
+	function onResize(e: PointerEvent) {
+		if (!resizing) return;
+		const pct = (e.clientX / window.innerWidth) * 100;
+		ui.editorWidth = Math.min(76, Math.max(24, pct));
+	}
+	function endResize() {
+		resizing = false;
+	}
 </script>
 
-<svelte:head>
-	<title>Chromatics</title>
-</svelte:head>
+<svelte:head><title>Chromatics</title></svelte:head>
 
-<div class="flex h-screen bg-[#0e0e10] text-[#c8c8d0]">
-	<!-- Author panel -->
-	<div class="flex w-1/2 flex-col border-r border-[#2a2a30]">
-		<div class="flex items-center gap-2 border-b border-[#2a2a30] px-4 py-2">
-			<h1 class="text-sm font-semibold tracking-wide text-[#8888a0]">EDITOR</h1>
-			<select
-				class="rounded bg-[#18181b] px-2 py-0.5 text-xs text-[#8888a0] outline-none"
-				bind:value={currentExample}
-				onchange={() => (app.source = EXAMPLES[currentExample])}
-			>
-				{#each exampleNames as name (name)}
-					<option value={name}>{name}</option>
-				{/each}
-			</select>
-			{#if app.result.errors.length > 0}
-				<span class="rounded bg-red-900/40 px-2 py-0.5 text-xs text-red-400">
-					{app.result.errors.length} error{app.result.errors.length > 1 ? 's' : ''}
-				</span>
-			{/if}
-			<div class="flex-1"></div>
-			{#if savedNames.length}
-				<select
-					class="rounded bg-[#18181b] px-2 py-0.5 text-xs text-[#8888a0] outline-none"
-					onchange={loadNamed}
-				>
-					<option value="">Saved…</option>
-					{#each savedNames as n (n)}<option value={n}>{n}</option>{/each}
-				</select>
-			{/if}
-			<button
-				class="rounded px-2 py-0.5 text-xs text-[#8888a0] transition-colors hover:bg-[#2a2a30] hover:text-[#c8c8d0]"
-				onclick={save}>Save</button
-			>
-			<button
-				class="rounded px-2 py-0.5 text-xs text-[#8888a0] transition-colors hover:bg-[#2a2a30] hover:text-[#c8c8d0]"
-				onclick={share}>{shareLabel}</button
-			>
-			<button
-				class="rounded px-2 py-0.5 text-xs transition-colors hover:bg-[#2a2a30] hover:text-[#c8c8d0] {showDocs
-					? 'bg-[#2a2a30] text-[#c8c8d0]'
-					: 'text-[#8888a0]'}"
-				onclick={() => (showDocs = !showDocs)}>API</button
-			>
-		</div>
+<div class="app">
+	<!-- Top bar -->
+	<header class="topbar">
+		<div class="brand"><span class="brand-dot"></span> Chromatics</div>
 
-		<div class="relative flex-1 overflow-hidden">
-			<Editor bind:value={app.source} completionSource={completion} />
-			{#if showDocs}
-				<Docs onclose={() => (showDocs = false)} />
-			{/if}
-		</div>
+		<select
+			class="select"
+			bind:value={currentExample}
+			onchange={() => (app.source = EXAMPLES[currentExample])}
+		>
+			{#each exampleNames as name (name)}<option value={name}>{name}</option>{/each}
+		</select>
 
 		{#if app.result.errors.length > 0}
-			<div class="max-h-32 overflow-y-auto border-t border-[#2a2a30] bg-red-950/20 px-4 py-2">
-				{#each app.result.errors as err (err.line + err.message)}
-					<div class="flex gap-2 text-xs">
-						<span class="text-red-500">line {err.line}:</span>
-						<span class="text-red-400">{err.message}</span>
-					</div>
-				{/each}
-			</div>
+			<span class="err-chip">{app.result.errors.length} error{app.result.errors.length > 1 ? 's' : ''}</span>
 		{/if}
-	</div>
 
-	<!-- Analyze panel -->
-	<div class="flex w-1/2 flex-col">
-		<div class="flex items-center gap-1 border-b border-[#2a2a30] px-2 py-1.5">
-			<button
-				class="rounded px-3 py-1 text-xs font-medium transition-colors {tab === 'inspector'
-					? 'bg-[#2a2a30] text-[#e4e4e8]'
-					: 'text-[#8888a0] hover:text-[#c8c8d0]'}"
-				onclick={() => (tab = 'inspector')}>Inspector</button
-			>
-			<button
-				class="rounded px-3 py-1 text-xs font-medium transition-colors {tab === 'matrix'
-					? 'bg-[#2a2a30] text-[#e4e4e8]'
-					: 'text-[#8888a0] hover:text-[#c8c8d0]'}"
-				onclick={() => (tab = 'matrix')}>Matrix</button
-			>
-			<button
-				class="rounded px-3 py-1 text-xs font-medium transition-colors {tab === 'preview'
-					? 'bg-[#2a2a30] text-[#e4e4e8]'
-					: 'text-[#8888a0] hover:text-[#c8c8d0]'}"
-				onclick={() => (tab = 'preview')}>Preview</button
-			>
-			<button
-				class="rounded px-3 py-1 text-xs font-medium transition-colors {tab === 'export'
-					? 'bg-[#2a2a30] text-[#e4e4e8]'
-					: 'text-[#8888a0] hover:text-[#c8c8d0]'}"
-				onclick={() => (tab = 'export')}>Export</button
-			>
-			<span class="ml-auto pr-2 text-xs text-[#555]">
-				{app.scheme.entries.length} color{app.scheme.entries.length !== 1 ? 's' : ''}
-			</span>
-		</div>
+		<div class="spacer"></div>
 
-		<div class="flex min-h-0 flex-1 flex-col overflow-hidden">
-			{#if tab === 'inspector'}
-				<Inspector scheme={app.scheme} />
-			{:else if tab === 'matrix'}
-				<Matrix />
-			{:else if tab === 'preview'}
-				<Preview />
+		{#if savedNames.length}
+			<select class="select" onchange={loadNamed}>
+				<option value="">Saved…</option>
+				{#each savedNames as n (n)}<option value={n}>{n}</option>{/each}
+			</select>
+		{/if}
+		<button class="btn" onclick={save}>Save</button>
+		<button class="btn" onclick={share}>{shareLabel}</button>
+		<button class="btn {showDocs ? 'btn-accent' : ''}" onclick={() => (showDocs = !showDocs)}>API</button>
+		<button class="icon-btn" onclick={() => ui.toggleTheme()} aria-label="Toggle theme" title="Toggle theme">
+			{#if ui.theme === 'dark'}
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
 			{:else}
-				<ExportPanel />
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
 			{/if}
-		</div>
+		</button>
+	</header>
+
+	<!-- Workspace -->
+	<div class="workspace" class:resizing>
+		{#if !ui.editorCollapsed}
+			<section class="editor-pane" style="width: {ui.editorWidth}%">
+				<div class="pane-head">
+					<span class="pane-title">Editor</span>
+					<div class="spacer"></div>
+					<button class="icon-btn" onclick={() => (ui.editorCollapsed = true)} aria-label="Collapse editor" title="Collapse editor">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+					</button>
+				</div>
+				<div class="editor-host scroll">
+					<Editor bind:value={app.source} completionSource={completion} />
+					{#if showDocs}<Docs onclose={() => (showDocs = false)} />{/if}
+				</div>
+				{#if app.result.errors.length > 0}
+					<div class="errorbar scroll">
+						{#each app.result.errors as err (err.line + err.message)}
+							<div class="err-row"><span class="err-line">line {err.line}</span><span>{err.message}</span></div>
+						{/each}
+					</div>
+				{/if}
+			</section>
+
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div
+				class="resizer"
+				onpointerdown={startResize}
+				onpointermove={onResize}
+				onpointerup={endResize}
+			></div>
+		{:else}
+			<button class="editor-rail" onclick={() => (ui.editorCollapsed = false)} title="Expand editor">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+				<span class="rail-label">Editor</span>
+			</button>
+		{/if}
+
+		<section class="analyze-pane">
+			<div class="pane-head">
+				<div class="seg">
+					{#each TABS as t (t.id)}
+						<button class="seg-item {ui.tab === t.id ? 'active' : ''}" onclick={() => (ui.tab = t.id)}>{t.label}</button>
+					{/each}
+				</div>
+				<div class="spacer"></div>
+				<span class="chip">{app.scheme.entries.length} color{app.scheme.entries.length !== 1 ? 's' : ''}</span>
+			</div>
+			<div class="analyze-body">
+				{#if ui.tab === 'inspector'}
+					<Inspector scheme={app.scheme} />
+				{:else if ui.tab === 'matrix'}
+					<Matrix />
+				{:else if ui.tab === 'preview'}
+					<Preview />
+				{:else}
+					<ExportPanel />
+				{/if}
+			</div>
+		</section>
 	</div>
 </div>
+
+<style>
+	.app {
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+		background: var(--bg);
+		color: var(--text);
+	}
+	.topbar {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 9px 14px;
+		border-bottom: 1px solid var(--border);
+		background: var(--surface);
+		flex-shrink: 0;
+	}
+	.brand {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-weight: 650;
+		font-size: 14px;
+		letter-spacing: -0.01em;
+		margin-right: 6px;
+	}
+	.brand-dot {
+		width: 16px;
+		height: 16px;
+		border-radius: 5px;
+		background: conic-gradient(from 0deg, #ff5d5d, #ffd24d, #4dff88, #4db8ff, #a64dff, #ff5d5d);
+	}
+	.spacer {
+		flex: 1;
+	}
+	.err-chip {
+		padding: 2px 9px;
+		border-radius: 99px;
+		background: color-mix(in srgb, var(--danger) 16%, transparent);
+		color: var(--danger);
+		font-size: 11px;
+		font-weight: 600;
+	}
+
+	.workspace {
+		display: flex;
+		flex: 1;
+		min-height: 0;
+	}
+	.workspace.resizing {
+		cursor: col-resize;
+		user-select: none;
+	}
+
+	.editor-pane {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		border-right: 1px solid var(--border);
+		background: var(--surface);
+	}
+	.pane-head {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 10px 8px 14px;
+		border-bottom: 1px solid var(--border);
+		flex-shrink: 0;
+		min-height: 45px;
+	}
+	.pane-title {
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-faint);
+	}
+	.editor-host {
+		position: relative;
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
+	}
+	.errorbar {
+		flex-shrink: 0;
+		max-height: 120px;
+		overflow-y: auto;
+		border-top: 1px solid var(--border);
+		background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+		padding: 8px 14px;
+	}
+	.err-row {
+		display: flex;
+		gap: 8px;
+		font-size: 12px;
+		color: var(--danger);
+		font-family: 'JetBrains Mono', ui-monospace, monospace;
+	}
+	.err-line {
+		opacity: 0.7;
+		flex-shrink: 0;
+	}
+
+	.resizer {
+		width: 7px;
+		flex-shrink: 0;
+		cursor: col-resize;
+		background: transparent;
+		position: relative;
+		margin: 0 -3px;
+		z-index: 5;
+	}
+	.resizer::after {
+		content: '';
+		position: absolute;
+		inset: 0 3px;
+		border-radius: 2px;
+		transition: background 0.12s;
+	}
+	.resizer:hover::after {
+		background: var(--accent);
+	}
+
+	.editor-rail {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 12px;
+		width: 38px;
+		flex-shrink: 0;
+		padding: 12px 0;
+		border-right: 1px solid var(--border);
+		background: var(--surface);
+		color: var(--text-muted);
+		cursor: pointer;
+	}
+	.editor-rail:hover {
+		color: var(--text);
+		background: var(--surface-2);
+	}
+	.rail-label {
+		writing-mode: vertical-rl;
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.analyze-pane {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-width: 0;
+		background: var(--bg);
+	}
+	.analyze-body {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
+	}
+</style>

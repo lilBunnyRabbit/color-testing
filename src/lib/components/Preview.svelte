@@ -62,7 +62,7 @@
 		<button class="pv-btn" onclick={() => (panelOpen = !panelOpen)}>
 			{panelOpen ? 'Hide roles' : 'Roles & audit'}
 		</button>
-		<span class="pv-fails" style="color: {fails > 0 ? '#ef4444' : '#22c55e'}">
+		<span class="pv-fails" style="color: {fails > 0 ? 'var(--danger)' : 'var(--ok)'}">
 			{fails}/{app.audit.length} failing
 		</span>
 	</div>
@@ -76,8 +76,8 @@
 						<div
 							class="role-swatch"
 							style="background: {app.roles[key] >= 0
-								? (app.scheme.entries[app.roles[key]]?.color.toCSS() ?? '#333')
-								: '#333'}"
+								? (app.scheme.entries[app.roles[key]]?.color.toCSS() ?? 'var(--border-strong)')
+								: 'var(--border-strong)'}"
 						></div>
 						<label class="role-label"
 							>{label}
@@ -290,35 +290,35 @@
 		flex-direction: column;
 		height: 100%;
 		min-height: 0;
-		background: #0e0e10;
+		background: var(--bg);
 	}
 	.pv-toolbar {
 		display: flex;
 		align-items: center;
 		gap: 10px;
 		padding: 8px 14px;
-		border-bottom: 1px solid #2a2a30;
+		border-bottom: 1px solid var(--border);
 		flex-shrink: 0;
 	}
 	.pv-select {
-		border: 1px solid #2a2a30;
+		border: 1px solid var(--border);
 		border-radius: 4px;
-		background: #18181b;
-		color: #ddd;
+		background: var(--surface-2);
+		color: var(--text);
 		padding: 3px 6px;
 		font-size: 12px;
 	}
 	.pv-btn {
 		padding: 3px 10px;
-		border: 1px solid #2a2a30;
+		border: 1px solid var(--border);
 		border-radius: 4px;
 		background: none;
-		color: #ddd;
+		color: var(--text);
 		font-size: 12px;
 		cursor: pointer;
 	}
 	.pv-btn:hover {
-		border-color: #555;
+		border-color: var(--text-faint);
 	}
 	.pv-fails {
 		margin-left: auto;
@@ -333,22 +333,22 @@
 	.pv-panel {
 		width: 220px;
 		flex-shrink: 0;
-		border-right: 1px solid #2a2a30;
+		border-right: 1px solid var(--border);
 		padding: 10px;
 		display: flex;
 		flex-direction: column;
 		gap: 6px;
 		overflow-y: auto;
-		color: #aaa;
+		color: var(--text-muted);
 	}
 	.pv-section-title {
 		font-size: 10px;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
-		color: #666;
+		color: var(--text-faint);
 		margin-top: 8px;
 		padding-top: 8px;
-		border-top: 1px solid #222;
+		border-top: 1px solid var(--border);
 	}
 	.role-row {
 		display: flex;
@@ -359,7 +359,7 @@
 		width: 14px;
 		height: 14px;
 		border-radius: 3px;
-		border: 1px solid #444;
+		border: 1px solid var(--border-strong);
 		flex-shrink: 0;
 	}
 	.role-label {
@@ -371,9 +371,9 @@
 		font-size: 11px;
 	}
 	.role-select {
-		background: #111;
-		color: #fff;
-		border: 1px solid #333;
+		background: var(--surface-2);
+		color: var(--text);
+		border: 1px solid var(--border-strong);
 		border-radius: 3px;
 		padding: 2px 4px;
 		font-size: 11px;
@@ -392,12 +392,12 @@
 	.opacity-label input {
 		flex: 1;
 		min-width: 0;
-		accent-color: #888;
+		accent-color: var(--text-muted);
 	}
 	.opacity-value {
 		font-family: monospace;
 		font-size: 10px;
-		color: #666;
+		color: var(--text-faint);
 		width: 28px;
 		text-align: right;
 	}
@@ -415,11 +415,11 @@
 		background: rgba(239, 68, 68, 0.1);
 	}
 	.audit-label {
-		color: #ccc;
+		color: var(--text);
 		font-weight: 600;
 	}
 	.audit-detail {
-		color: #666;
+		color: var(--text-faint);
 		font-size: 9px;
 	}
 	.audit-result {
@@ -429,14 +429,14 @@
 	}
 	.audit-ratio {
 		font-family: monospace;
-		color: #999;
+		color: var(--text-muted);
 	}
 	.audit-level {
 		font-weight: 700;
 	}
 	.pv-empty {
 		padding: 32px;
-		color: #555;
+		color: var(--text-faint);
 		font-size: 13px;
 	}
 

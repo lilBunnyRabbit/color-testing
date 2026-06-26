@@ -89,7 +89,7 @@
 	.docs-overlay {
 		position: absolute;
 		inset: 0;
-		background: rgba(14, 14, 16, 0.96);
+		background: color-mix(in srgb, var(--surface) 94%, transparent);
 		backdrop-filter: blur(4px);
 		overflow-y: auto;
 		z-index: 40;
@@ -109,32 +109,32 @@
 		font-size: 14px;
 		font-weight: 700;
 		letter-spacing: 0.04em;
-		color: #c8c8d0;
+		color: var(--text);
 	}
 	.docs-sub {
 		font-size: 11px;
-		color: #555;
+		color: var(--text-faint);
 		margin-right: auto;
 	}
 	.docs-close {
 		padding: 3px 10px;
-		border: 1px solid #2a2a30;
+		border: 1px solid var(--border);
 		border-radius: 4px;
 		background: none;
-		color: #888;
+		color: var(--text-muted);
 		font-size: 12px;
 		cursor: pointer;
 	}
 	.docs-close:hover {
-		color: #ddd;
-		border-color: #555;
+		color: var(--text);
+		border-color: var(--text-faint);
 	}
 	.docs-section {
 		font-size: 11px;
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
-		color: #8888a0;
+		color: var(--text-faint);
 		margin: 18px 0 6px;
 		display: flex;
 		align-items: baseline;
@@ -145,17 +145,17 @@
 		font-weight: 500;
 		text-transform: none;
 		letter-spacing: 0;
-		color: #555;
+		color: var(--text-faint);
 	}
 	.docs-view {
 		font-family: monospace;
 		font-size: 11px;
-		color: #61c9a8;
+		color: var(--syn-method);
 	}
 	.docs-badge {
 		font-size: 9px;
-		color: #d19a66;
-		border: 1px solid #5a4630;
+		color: var(--syn-num);
+		border: 1px solid var(--border-strong);
 		border-radius: 3px;
 		padding: 0 4px;
 	}
@@ -174,27 +174,27 @@
 		flex-wrap: wrap;
 	}
 	.docs-doc {
-		color: #555;
+		color: var(--text-faint);
 		font-size: 11px;
 	}
 	.t-ctor {
-		color: #e5c07b;
+		color: var(--syn-type);
 	}
 	.t-fn {
-		color: #b4a0e5;
+		color: var(--syn-fn);
 		margin-right: 8px;
 	}
 	.t-method {
-		color: #61c9a8;
+		color: var(--syn-method);
 	}
 	.t-prop {
-		color: #7ec8e3;
+		color: var(--syn-prop);
 	}
 	.t-ret {
-		color: #555;
+		color: var(--text-faint);
 	}
 	.t-dim {
-		color: #666;
+		color: var(--text-faint);
 	}
 	.t-stub {
 		opacity: 0.5;

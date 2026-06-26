@@ -38,14 +38,14 @@
 		flex-direction: column;
 		height: 100%;
 		min-height: 0;
-		background: #0e0e10;
+		background: var(--bg);
 	}
 	.ex-toolbar {
 		display: flex;
 		align-items: center;
 		gap: 4px;
 		padding: 8px 12px;
-		border-bottom: 1px solid #2a2a30;
+		border-bottom: 1px solid var(--border);
 		flex-shrink: 0;
 		flex-wrap: wrap;
 	}
@@ -54,29 +54,29 @@
 		border: 1px solid transparent;
 		border-radius: 4px;
 		background: none;
-		color: #8888a0;
+		color: var(--text-faint);
 		font-size: 12px;
 		cursor: pointer;
 	}
 	.ex-tab:hover {
-		color: #c8c8d0;
+		color: var(--text);
 	}
 	.ex-active {
-		background: #2a2a30;
-		color: #e4e4e8;
+		background: var(--border);
+		color: var(--text);
 	}
 	.ex-copy {
 		margin-left: auto;
 		padding: 3px 10px;
-		border: 1px solid #2a2a30;
+		border: 1px solid var(--border);
 		border-radius: 4px;
 		background: none;
-		color: #ddd;
+		color: var(--text);
 		font-size: 12px;
 		cursor: pointer;
 	}
 	.ex-copy:hover:not(:disabled) {
-		border-color: #555;
+		border-color: var(--text-faint);
 	}
 	.ex-copy:disabled {
 		opacity: 0.4;
@@ -84,7 +84,7 @@
 	}
 	.ex-empty {
 		padding: 32px;
-		color: #555;
+		color: var(--text-faint);
 		font-size: 13px;
 	}
 	.ex-output {
@@ -96,7 +96,7 @@
 		font-family: ui-monospace, Menlo, monospace;
 		font-size: 12px;
 		line-height: 1.6;
-		color: #c8c8d0;
+		color: var(--text);
 		white-space: pre;
 	}
 </style>
