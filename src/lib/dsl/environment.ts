@@ -1,26 +1,27 @@
 /**
- * The DSL global environment: constructors + free functions + math, built on
- * the model engine. (P2 will generate the constructor/builtin set directly from
- * the manifest; for now it mirrors today's surface on top of ColorValue.)
+ * The DSL global environment: constructors (generated from the registry) +
+ * free functions + math. Because constructors come from the manifest, adding a
+ * model is a pure data change — no edit here.
  */
-import { OKLCH, OKLAB, HSL, HSV, HWB, LAB, LCH, RGB, P3, hex, type DSLValue } from '../models/index.js';
+import { manifest } from './manifest.js';
+import { getModel, hex, ColorValue, type DSLValue } from '../models/index.js';
 import { num, color, oklchMix } from '../models/util.js';
 import { wcagContrast, differenceCiede2000 } from '../models/registry.js';
 
 export function createEnvironment(): Map<string, DSLValue> {
 	const env = new Map<string, DSLValue>();
 
-	// Color constructors (each yields the same canonical ColorValue)
-	env.set('OKLCH', OKLCH);
-	env.set('OKLAB', OKLAB);
-	env.set('HSL', HSL);
-	env.set('HSV', HSV);
-	env.set('HWB', HWB);
-	env.set('LAB', LAB);
-	env.set('LCH', LCH);
-	env.set('RGB', RGB);
-	env.set('P3', P3);
-	env.set('hex', hex);
+	// Color constructors — derived from each model's registered ctor.
+	for (const c of manifest.constructors) {
+		if (c.name === 'hex') {
+			env.set('hex', hex);
+			continue;
+		}
+		const def = getModel(c.model);
+		if (!def?.ctor) continue;
+		const build = def.ctor.build;
+		env.set(c.name, (...args: DSLValue[]) => ColorValue.from(build(args.map(num))));
+	}
 
 	// Free functions
 	env.set('mix', (a: DSLValue, b: DSLValue, r?: DSLValue) =>

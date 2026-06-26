@@ -12,6 +12,7 @@ export type Family =
 	| 'lab'
 	| 'rgb'
 	| 'subtractive'
+	| 'tristimulus'
 	| 'root';
 
 export interface ChannelDef {

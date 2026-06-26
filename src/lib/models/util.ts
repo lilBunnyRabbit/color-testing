@@ -33,6 +33,11 @@ export function optNum(o: PlainObject, key: string): number | undefined {
 
 // --- scalar helpers ---
 
+/** Thrown by methods/ctors on models that aren't culori-backed yet. */
+export function unbacked(label: string): never {
+	throw new Error(`${label} is not yet backed — needs the @lilbunnyrabbit/chromatics package`);
+}
+
 export function clamp01(n: number): number {
 	return Math.max(0, Math.min(1, n));
 }

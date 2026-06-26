@@ -13,3 +13,8 @@ import './cielch';
 import './srgb';
 import './linear-srgb';
 import './display-p3';
+import './xyz';
+// Deferred (backed:false) — advertise in docs/autocomplete, throw on use.
+import './cmyk';
+import './hct';
+import './hsluv';
