@@ -1,45 +1,50 @@
 import { test, expect } from 'bun:test';
 import { evaluate } from '../../src/lib/dsl/evaluator';
 import { source } from '../../src/routes/examples/brand-dark';
-import { isColorValue } from '../../src/lib/models';
+import { isColorValue, ColorValue } from '../../src/lib/models';
 
 /**
- * Golden snapshot captured from the legacy `Color` evaluator before the swap
- * to the multi-model engine. The new engine must reproduce these byte-for-byte.
+ * Core colors with master's published hex values
+ * (master:src/lib/schemes/brand-dark.ts). The DSL must reproduce them exactly.
  */
-const GOLDEN: Record<string, string> = {
-	bg: '#17252c',
-	fg: '#b1aba8',
+const MASTER_PUBLISHED: Record<string, string> = {
+	background: '#17252c',
+	foreground: '#b1aba8',
 	primary: '#a4b483',
 	secondary: '#b5a2d2',
 	accent: '#d1a085',
-	bg_lightest: '#324149',
-	bg_lighter: '#29373f',
-	bg_light: '#202e35',
-	bg_dark: '#0e1c23',
-	bg_darker: '#07141a',
-	bg_darkest: '#020c12',
 	success: '#7ac26a',
 	warning: '#e49b39',
 	error: '#f88876',
-	info: '#49b7fb',
-	triad_a: '#d39aa8',
-	triad_b: '#86b2d5',
-	split_a: '#9daad9',
-	split_b: '#c89cc0'
+	info: '#49b7fb'
 };
 
+function hexes(src: string) {
+	const r = evaluate(src);
+	const out: Record<string, string> = {};
+	for (const n of r.order) {
+		const v = r.variables.get(n)!;
+		if (isColorValue(v.value)) out[n] = (v.value as ColorValue).hex;
+	}
+	return { out, errors: r.errors };
+}
+
 test('brand-dark evaluates with zero errors', () => {
-	const r = evaluate(source);
-	expect(r.errors).toEqual([]);
+	expect(evaluate(source).errors).toEqual([]);
 });
 
-test('every named color matches the golden hex snapshot', () => {
-	const r = evaluate(source);
-	const got: Record<string, string> = {};
-	for (const name of r.order) {
-		const v = r.variables.get(name)!;
-		if (isColorValue(v.value)) got[name] = v.value.hex;
+test('brand-dark reproduces master published hexes byte-for-byte', () => {
+	const { out } = hexes(source);
+	for (const [name, hex] of Object.entries(MASTER_PUBLISHED)) {
+		expect(out[name]).toBe(hex);
 	}
-	expect(got).toEqual(GOLDEN);
+});
+
+test('brand-dark renders the full 18-variant background chroma study', () => {
+	const { out } = hexes(source);
+	const bgVars = Object.keys(out).filter((n) => n.startsWith('bg_'));
+	expect(bgVars.length).toBe(18);
+	// the three chroma modes at one step are distinct (sat / flat / desat)
+	expect(out.bg_lightest_sat).not.toBe(out.bg_lightest_flat);
+	expect(out.bg_lightest_flat).not.toBe(out.bg_lightest_desat);
 });

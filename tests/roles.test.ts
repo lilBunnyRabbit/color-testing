@@ -14,8 +14,8 @@ describe('role mapping on brand-dark', () => {
 	const roles = autoAssign(s.entries);
 
 	test('auto-assigns bg/fg/primary by name', () => {
-		expect(s.entries[roles.bg].name).toBe('bg');
-		expect(s.entries[roles.fg].name).toBe('fg');
+		expect(s.entries[roles.bg].name).toBe('background');
+		expect(s.entries[roles.fg].name).toBe('foreground');
 		expect(s.entries[roles.primary].name).toBe('primary');
 		expect(s.entries[roles.secondary].name).toBe('secondary');
 		expect(s.entries[roles.accent].name).toBe('accent');

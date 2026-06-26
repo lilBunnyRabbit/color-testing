@@ -1,22 +1,21 @@
-export const name = 'Brand Dark';
+export const name = 'Brand Light';
 
-export const source = `// ── Brand Dark — dark teal, with the background chroma study ──
-// Each background step is rendered in 3 chroma modes:
-//   sat  (+chroma)  · flat (no chroma) · desat (-chroma)
-// Lighter surfaces gain color (elevated), darker ones lose it (receding).
+export const source = `// ── Brand Light — warm cream, with the background chroma study ──
+// A high-lightness, low-chroma base. Darker surfaces gain warmth,
+// lighter ones fade toward white — same sat / flat / desat study.
 
-// ── Source ──
-background = OKLCH(0.255, 0.0233, 230.47)
+// ── Source (warm cream) ──
+background = OKLCH(0.96, 0.018, 85)
 
-// ── Core (each defined by a relationship) ──
-foreground = OKLCH(1 - background.ok_l, background.ok_c / 3, (background.ok_h + 180) % 360)
-primary    = OKLCH(foreground.ok_l, background.ok_c * 3, (foreground.ok_h + 72) % 360)
+// ── Core ──
+foreground = OKLCH(background.ok_l / 2, background.ok_c, (background.ok_h + 155) % 360)
+primary    = OKLCH((background.ok_l + foreground.ok_l) / 2, foreground.ok_c * 5, (background.ok_h - 25 + 360) % 360)
 secondary  = primary.derive({ h: (primary.ok_h + 180) % 360 })
-accent     = primary.derive({ h: foreground.ok_h })
+accent     = primary.derive({ h: (primary.ok_h - 90 + 360) % 360 })
 
-// ── Background scale: lightness step × chroma mode ──
-lStep = 0.11
-cStep = 0.01
+// ── Background scale: lightness step × chroma mode (tighter, near L=1) ──
+lStep = 0.035
+cStep = lStep * 0.15
 
 bg_lightest_sat   = background.shift({ l:  lStep,       c:  cStep })
 bg_lightest_flat  = background.shift({ l:  lStep })
@@ -37,11 +36,11 @@ bg_darkest_sat    = background.shift({ l: -lStep,       c:  cStep })
 bg_darkest_flat   = background.shift({ l: -lStep })
 bg_darkest_desat  = background.shift({ l: -lStep,       c: -cStep })
 
-// ── Semantic (primary lightness, double chroma, fixed hues) ──
-success = OKLCH(primary.ok_l, primary.ok_c * 2, 140)
-warning = OKLCH(primary.ok_l, primary.ok_c * 2, 70)
-error   = OKLCH(primary.ok_l, primary.ok_c * 2, 30)
-info    = OKLCH(primary.ok_l, primary.ok_c * 2, 240)
+// ── Semantic ──
+success = OKLCH(primary.ok_l, primary.ok_c * 2, 145)
+warning = OKLCH(primary.ok_l, primary.ok_c * 2, 75)
+error   = OKLCH(primary.ok_l, primary.ok_c * 2, 25)
+info    = OKLCH(primary.ok_l, primary.ok_c * 2, 230)
 
 // ── Harmony ──
 triad_a = primary.shift({ h: -120 })
