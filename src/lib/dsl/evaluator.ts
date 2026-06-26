@@ -4,7 +4,15 @@ import { Color } from './color.js';
 
 // --- Types ---
 
-export type DSLValue = number | string | boolean | Color | DSLFunction;
+export type PlainObject = { [key: string]: DSLValue };
+export type DSLValue =
+	| number
+	| string
+	| boolean
+	| Color
+	| DSLValue[]
+	| PlainObject
+	| DSLFunction;
 export type DSLFunction = (...args: DSLValue[]) => DSLValue;
 
 export interface Variable {
@@ -202,6 +210,20 @@ function evalNode(node: Node, scope: Scope): DSLValue {
 				? evalNode(n.property, scope)
 				: (n.property as Node & { name: string }).name;
 
+			// Array indexing: scale[0], scale[-1], scale.length
+			if (Array.isArray(obj)) {
+				if (prop === 'length') return obj.length;
+				const idx = num(prop as DSLValue);
+				if (!Number.isInteger(idx)) {
+					throw new Error(`Array index must be an integer, got ${idx}`);
+				}
+				const el = obj[idx < 0 ? obj.length + idx : idx];
+				if (el === undefined) {
+					throw new Error(`Array index out of bounds: ${idx}`);
+				}
+				return el;
+			}
+
 			if (obj instanceof Color && typeof prop === 'string') {
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				const val = (obj as any)[prop];
@@ -215,7 +237,16 @@ function evalNode(node: Node, scope: Scope): DSLValue {
 				return val as DSLValue;
 			}
 
-			throw new Error(`Cannot access property '${prop}' on ${typeof obj}`);
+			// Plain object property access: opts.kL
+			if (obj !== null && typeof obj === 'object' && typeof prop === 'string') {
+				const rec = obj as PlainObject;
+				if (!Object.prototype.hasOwnProperty.call(rec, prop)) {
+					throw new Error(`Object has no property: ${prop}`);
+				}
+				return rec[prop];
+			}
+
+			throw new Error(`Cannot access property '${String(prop)}' on ${typeof obj}`);
 		}
 
 		case 'CallExpression': {
@@ -248,6 +279,52 @@ function evalNode(node: Node, scope: Scope): DSLValue {
 		case 'ExpressionStatement': {
 			const n = node as Node & { expression: Node };
 			return evalNode(n.expression, scope);
+		}
+
+		case 'ArrayExpression': {
+			const n = node as Node & { elements: (Node | null)[] };
+			const arr: DSLValue[] = [];
+			for (const el of n.elements) {
+				if (el === null) {
+					throw new Error('Sparse array elements are not supported');
+				}
+				if (el.type === 'SpreadElement') {
+					throw new Error('Spread elements are not supported');
+				}
+				arr.push(evalNode(el, scope));
+			}
+			return arr;
+		}
+
+		case 'ObjectExpression': {
+			const n = node as Node & { properties: Node[] };
+			const obj: PlainObject = {};
+			for (const p of n.properties) {
+				const prop = p as Node & {
+					key: Node & { name?: string; value?: unknown };
+					value: Node;
+					kind?: string;
+					computed?: boolean;
+				};
+				if (prop.type !== 'Property') {
+					throw new Error('Object spread is not supported');
+				}
+				if (prop.kind && prop.kind !== 'init') {
+					throw new Error('Getters and setters are not supported');
+				}
+				let key: string;
+				if (prop.computed) {
+					key = String(evalNode(prop.key, scope));
+				} else if (prop.key.type === 'Identifier') {
+					key = prop.key.name as string;
+				} else if (prop.key.type === 'Literal') {
+					key = String((prop.key as Node & { value: unknown }).value);
+				} else {
+					throw new Error(`Unsupported object key: ${prop.key.type}`);
+				}
+				obj[key] = evalNode(prop.value, scope);
+			}
+			return obj;
 		}
 
 		default:

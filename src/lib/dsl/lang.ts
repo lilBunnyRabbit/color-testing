@@ -60,11 +60,8 @@ const parser: StreamParser<State> = {
 
 			if (state.afterDot) {
 				state.afterDot = false;
-				// Check if followed by ( to distinguish method from property
-				if (stream.peek() === '(') {
-					if (METHODS.has(word)) return tags.function(tags.propertyName).toString();
-					return tags.function(tags.propertyName).toString();
-				}
+				// Color members by registry membership, not by whether `(` follows.
+				if (METHODS.has(word)) return tags.function(tags.propertyName).toString();
 				if (PROPERTIES.has(word)) return tags.propertyName.toString();
 				return tags.propertyName.toString();
 			}

@@ -2,51 +2,12 @@
 	import { evaluate, type EvalResult, type DSLValue } from '$lib/dsl/evaluator.js';
 	import { Color } from '$lib/dsl/color.js';
 	import Editor from '$lib/Editor.svelte';
+	import { examples } from './examples';
 
-	const EXAMPLES: Record<string, string> = {
-		'Simple': `// Try changing the brand color!
-brand = hex("#6c5ce7")
-
-bg = OKLCH(0.97, brand.ok_c * 0.15, brand.ok_h)
-fg = HSL(brand.h, 0.12, 0.18)
-muted = fg.lighten(0.45)
-surface = bg.darken(0.04)
-
-accent = brand.rotate(150)
-error = hex("#e74c3c")
-success = HSL(155, 0.6, 0.38)`,
-
-		'Brand Dark': `// ── Source ──
-bg = OKLCH(0.255, 0.0233, 230.47)
-
-// ── Core ──
-fg = OKLCH(1 - bg.ok_l, bg.ok_c / 3, (bg.ok_h + 180) % 360)
-primary = OKLCH(fg.ok_l, bg.ok_c * 3, (fg.ok_h + 72) % 360)
-secondary = OKLCH(primary.ok_l, primary.ok_c, (primary.ok_h + 180) % 360)
-accent = OKLCH(primary.ok_l, primary.ok_c, fg.ok_h)
-
-// ── Background scale ──
-bg_lightest = bg.lighten(0.11)
-bg_lighter = bg.lighten(0.073)
-bg_light = bg.lighten(0.037)
-bg_dark = bg.darken(0.037)
-bg_darker = bg.darken(0.073)
-bg_darkest = bg.darken(0.11)
-
-// ── Semantic ──
-success = OKLCH(primary.ok_l, primary.ok_c * 2, 140)
-warning = OKLCH(primary.ok_l, primary.ok_c * 2, 70)
-error = OKLCH(primary.ok_l, primary.ok_c * 2, 30)
-info = OKLCH(primary.ok_l, primary.ok_c * 2, 240)
-
-// ── Harmony ──
-triad_a = primary.rotate(-120)
-triad_b = primary.rotate(120)
-split_a = primary.rotate(150)
-split_b = primary.rotate(210)`,
-	};
-
-	const exampleNames = Object.keys(EXAMPLES);
+	const EXAMPLES: Record<string, string> = Object.fromEntries(
+		examples.map((e) => [e.name, e.source])
+	);
+	const exampleNames = examples.map((e) => e.name);
 
 	let currentExample = $state(exampleNames[0]);
 	let source = $state(EXAMPLES[currentExample]);
