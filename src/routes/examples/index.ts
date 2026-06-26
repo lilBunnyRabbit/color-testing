@@ -12,9 +12,9 @@ export interface Example {
 
 /** Ordered list of editor examples. First entry is the default on load. */
 export const examples: Example[] = [
+	{ name: simpleName, source: simpleSource },
 	{ name: showcaseName, source: showcaseSource },
 	{ name: previewsName, source: previewsSource },
-	{ name: simpleName, source: simpleSource },
 	{ name: brandDarkName, source: brandDarkSource },
 	{ name: brandLightName, source: brandLightSource },
 	{ name: dynamicName, source: dynamicSource }

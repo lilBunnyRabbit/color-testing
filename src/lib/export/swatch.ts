@@ -79,10 +79,9 @@ export function toSwatchSVG(scheme: Scheme, opts: SwatchOptions = {}): string {
 			const cy = headerH + pad + Math.floor(i / cols) * (cardH + gap);
 			const fill = e.color.hex;
 			const lab = labelOn(e);
-			return `  <g transform="translate(${cx} ${cy})">
-    <rect width="${cardW}" height="${cardH}" rx="12" fill="#ffffff"/>
-    <rect width="${cardW}" height="${swatchH}" rx="12" fill="${fill}"/>
-    <rect y="${swatchH - 12}" width="${cardW}" height="12" fill="${fill}"/>
+			return `  <g transform="translate(${cx} ${cy})" clip-path="url(#cardClip)">
+    <rect width="${cardW}" height="${cardH}" fill="#ffffff"/>
+    <rect width="${cardW}" height="${swatchH}" fill="${fill}"/>
     <text x="14" y="26" font-size="13" font-weight="700" fill="${lab}" font-family="ui-sans-serif, system-ui, sans-serif">${esc(e.name)}</text>
     <text x="14" y="${swatchH - 14}" font-size="11" fill="${lab}" opacity="0.85" font-family="ui-monospace, monospace">${fill}</text>
     <text x="14" y="${swatchH + 26}" font-size="11" font-weight="600" fill="#11181c" font-family="ui-sans-serif, system-ui, sans-serif">${esc(e.name)}</text>
@@ -92,6 +91,7 @@ export function toSwatchSVG(scheme: Scheme, opts: SwatchOptions = {}): string {
 		.join('\n');
 
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <defs><clipPath id="cardClip"><rect width="${cardW}" height="${cardH}" rx="12"/></clipPath></defs>
   <rect width="${width}" height="${height}" fill="${sheetBg}"/>
   <text x="${pad}" y="${pad + 22}" font-size="20" font-weight="800" fill="${titleColor}" font-family="ui-sans-serif, system-ui, sans-serif">${esc(title)}</text>
   <text x="${pad}" y="${pad + 40}" font-size="12" fill="${subColor}" font-family="ui-sans-serif, system-ui, sans-serif">${entries.length} colors · generated with Chromatics</text>
