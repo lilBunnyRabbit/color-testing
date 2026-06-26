@@ -16,6 +16,7 @@ import {
 	wcagLuminance,
 	displayable,
 	inGamut,
+	blend,
 	differenceCie76,
 	differenceCie94,
 	differenceCiede2000,
@@ -25,6 +26,9 @@ import {
 	filterDeficiencyDeuter,
 	filterDeficiencyTrit,
 	filterGrayscale,
+	filterContrast,
+	filterBrightness,
+	filterSaturate,
 	type Color as CuloriColor
 } from 'culori';
 import type { ModelDef, ModelSpec, ChannelDef, MethodDef } from './types';
@@ -40,6 +44,7 @@ export {
 	wcagLuminance,
 	displayable,
 	inGamut,
+	blend,
 	differenceCie76,
 	differenceCie94,
 	differenceCiede2000,
@@ -48,7 +53,10 @@ export {
 	filterDeficiencyProt,
 	filterDeficiencyDeuter,
 	filterDeficiencyTrit,
-	filterGrayscale
+	filterGrayscale,
+	filterContrast,
+	filterBrightness,
+	filterSaturate
 };
 export type { CuloriColor };
 
