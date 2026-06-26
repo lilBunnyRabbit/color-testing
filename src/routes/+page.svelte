@@ -3,8 +3,13 @@
 	import Inspector from '$lib/components/Inspector.svelte';
 	import Matrix from '$lib/components/Matrix.svelte';
 	import Preview from '$lib/components/Preview.svelte';
+	import Docs from '$lib/components/Docs.svelte';
 	import { app } from '$lib/state/app.svelte';
+	import { chromaCompletions } from '$lib/dsl/complete';
 	import { examples } from './examples';
+
+	const completion = chromaCompletions(() => app.result.order);
+	let showDocs = $state(false);
 
 	const EXAMPLES: Record<string, string> = Object.fromEntries(
 		examples.map((e) => [e.name, e.source])
@@ -41,10 +46,20 @@
 					{app.result.errors.length} error{app.result.errors.length > 1 ? 's' : ''}
 				</span>
 			{/if}
+			<div class="flex-1"></div>
+			<button
+				class="rounded px-2 py-0.5 text-xs transition-colors hover:bg-[#2a2a30] hover:text-[#c8c8d0] {showDocs
+					? 'bg-[#2a2a30] text-[#c8c8d0]'
+					: 'text-[#8888a0]'}"
+				onclick={() => (showDocs = !showDocs)}>API</button
+			>
 		</div>
 
 		<div class="relative flex-1 overflow-hidden">
-			<Editor bind:value={app.source} />
+			<Editor bind:value={app.source} completionSource={completion} />
+			{#if showDocs}
+				<Docs onclose={() => (showDocs = false)} />
+			{/if}
 		</div>
 
 		{#if app.result.errors.length > 0}

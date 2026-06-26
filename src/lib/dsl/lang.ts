@@ -1,17 +1,12 @@
 import { StreamLanguage, type StreamParser } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
+import { manifest } from './manifest.js';
 
-const CONSTRUCTORS = new Set(['HSL', 'RGB', 'OKLCH']);
-const BUILTINS = new Set(['hex', 'mix', 'contrast', 'clamp', 'abs', 'min', 'max', 'round', 'floor', 'ceil']);
-const METHODS = new Set([
-	'lighten', 'darken', 'saturate', 'desaturate', 'rotate',
-	'invert', 'complement', 'mix', 'shift', 'derive', 'contrast'
-]);
-const PROPERTIES = new Set([
-	'ok_l', 'ok_c', 'ok_h',
-	'h', 's', 'l', 'r', 'g', 'b',
-	'hex', 'inGamut', 'inP3', 'gamutMapped'
-]);
+// Token sets are derived from the one registry-built manifest (no drift).
+const CONSTRUCTORS = manifest.constructorNames;
+const BUILTINS = manifest.builtinNames;
+const METHODS = manifest.methodNames;
+const PROPERTIES = manifest.propertyNames;
 
 interface State {
 	afterDot: boolean;

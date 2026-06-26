@@ -7,13 +7,16 @@
 	import { HighlightStyle } from '@codemirror/language';
 	import { tags } from '@lezer/highlight';
 	import { chromaDSL } from '$lib/dsl/lang.js';
+	import { autocompletion, type CompletionSource } from '@codemirror/autocomplete';
 
 	let {
 		value = $bindable(''),
-		onchange
+		onchange,
+		completionSource
 	}: {
 		value: string;
 		onchange?: (value: string) => void;
+		completionSource?: CompletionSource;
 	} = $props();
 
 	let container: HTMLDivElement;
@@ -97,6 +100,9 @@
 					highlightActiveLineGutter(),
 					keymap.of([...defaultKeymap, ...historyKeymap]),
 					chromaDSL,
+					...(completionSource
+						? [autocompletion({ override: [completionSource], activateOnTyping: true })]
+						: []),
 					theme,
 					highlight,
 					updateListener,

@@ -1,0 +1,153 @@
+/**
+ * The token manifest — ONE source derived from the model registry, consumed
+ * four ways: the evaluator environment (constructors/builtins), the CodeMirror
+ * highlighter (token sets), autocomplete (context-aware members), and the docs.
+ * This is what kills the "three-places drift".
+ */
+import { allModels, CHANNELS } from '../models/index.js';
+import type { ModelDef, MethodDef, ParamDef, ChannelDef } from '../models/index.js';
+
+export interface ConstructorInfo {
+	name: string;
+	params: ParamDef[];
+	doc: string;
+	model: string;
+}
+
+export interface MemberInfo {
+	name: string;
+	kind: 'method' | 'accessor' | 'channel' | 'view';
+	detail: string; // signature or return type
+	doc: string;
+	model: string;
+	backed: boolean;
+}
+
+export interface TokenManifest {
+	constructors: ConstructorInfo[];
+	builtins: string[];
+	// highlighter token sets
+	constructorNames: Set<string>;
+	builtinNames: Set<string>;
+	methodNames: Set<string>; // callable members across all views + root
+	propertyNames: Set<string>; // channel keys + localKeys + view names + accessors
+	// completion
+	valueMembers: MemberInfo[]; // members on a bare value
+	viewMembers: Map<string, MemberInfo[]>; // model id -> its members
+	models: ModelDef[];
+}
+
+const BUILTINS = ['mix', 'contrast', 'deltaE', 'clamp', 'abs', 'min', 'max', 'round', 'floor', 'ceil'];
+
+function sig(params: ParamDef[]): string {
+	return '(' + params.map((p) => p.name + (p.optional ? '?' : '')).join(', ') + ')';
+}
+
+function memberInfo(def: MethodDef, m: ModelDef): MemberInfo {
+	return {
+		name: def.name,
+		kind: def.kind,
+		detail: def.kind === 'method' ? `${sig(def.params)} → ${def.returns}` : def.returns,
+		doc: def.doc,
+		model: m.id,
+		backed: m.backed
+	};
+}
+
+export function buildManifest(
+	models: ModelDef[],
+	channels: Map<string, ChannelDef & { modelId: string; mode: string }>
+): TokenManifest {
+	const constructors: ConstructorInfo[] = [];
+	const methodNames = new Set<string>();
+	const propertyNames = new Set<string>();
+	const valueMembers: MemberInfo[] = [];
+	const viewMembers = new Map<string, MemberInfo[]>();
+	const root = models.find((m) => m.id === 'root');
+
+	for (const m of models) {
+		if (m.ctor) {
+			constructors.push({
+				name: m.ctor.name,
+				params: m.ctor.params,
+				doc: `Construct a color in ${m.label}`,
+				model: m.id
+			});
+		}
+		if (m.id === 'root') continue;
+
+		// the view name is itself a member of a bare value
+		propertyNames.add(m.id);
+		valueMembers.push({
+			name: m.id,
+			kind: 'view',
+			detail: `${m.label} view`,
+			doc: `Think/act in ${m.label}`,
+			model: m.id,
+			backed: m.backed
+		});
+
+		const members: MemberInfo[] = [];
+		for (const ch of m.channels) {
+			propertyNames.add(ch.localKey);
+			members.push({
+				name: ch.localKey,
+				kind: 'channel',
+				detail: 'number',
+				doc: ch.label,
+				model: m.id,
+				backed: m.backed
+			});
+		}
+		for (const def of m.methods.values()) {
+			members.push(memberInfo(def, m));
+			if (def.kind === 'method') methodNames.add(def.name);
+			else propertyNames.add(def.name);
+		}
+		viewMembers.set(m.id, members);
+	}
+
+	// flat channel accessors on a bare value (ok_l, hwb_w, lab_a, lr…)
+	for (const [key, ch] of channels) {
+		propertyNames.add(key);
+		valueMembers.push({
+			name: key,
+			kind: 'channel',
+			detail: 'number',
+			doc: `${ch.label} (${ch.modelId})`,
+			model: ch.modelId,
+			backed: true
+		});
+	}
+
+	// root flat-shortcuts on a bare value (lighten, rotate, hex accessor…)
+	if (root) {
+		for (const def of root.methods.values()) {
+			valueMembers.push(memberInfo(def, root));
+			if (def.kind === 'method') methodNames.add(def.name);
+			else propertyNames.add(def.name);
+		}
+	}
+
+	// hex is a free constructor, not a model ctor
+	constructors.push({
+		name: 'hex',
+		params: [{ name: 'css', kind: 'string' }],
+		doc: 'Parse a CSS / hex color string',
+		model: 'srgb'
+	});
+
+	return {
+		constructors,
+		builtins: BUILTINS,
+		constructorNames: new Set(constructors.map((c) => c.name).filter((n) => n !== 'hex')),
+		builtinNames: new Set([...BUILTINS, 'hex']),
+		methodNames,
+		propertyNames,
+		valueMembers,
+		viewMembers,
+		models
+	};
+}
+
+export const manifest = buildManifest(allModels(), CHANNELS);
