@@ -5,7 +5,8 @@ import {
 	CHANNELS,
 	formatHex,
 	isDisplayable,
-	inGamut
+	inGamut,
+	clampChroma
 } from './registry';
 import { ModelView } from './view';
 
@@ -103,6 +104,10 @@ export class ColorValue {
 	}
 	get inP3(): boolean {
 		return inGamut('p3')(this._oklch);
+	}
+	/** Chroma-clamped into the sRGB gamut (display convenience). */
+	get gamutMapped(): ColorValue {
+		return ColorValue.from(clampChroma(this._oklch, 'oklch'));
 	}
 	toCSS(): string {
 		const def = getModel('oklch');
