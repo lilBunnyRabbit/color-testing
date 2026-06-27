@@ -3,7 +3,11 @@
 	import { MODEL_DOCS } from '$lib/dsl/model-docs';
 	import { ui } from '$lib/state/ui.svelte';
 
-	let { seed = '#3aa0ff' }: { seed?: string } = $props();
+	let {
+		seed = '#3aa0ff',
+		pinnedId,
+		compact = false
+	}: { seed?: string; pinnedId?: string; compact?: boolean } = $props();
 
 	const FAMILY_LABEL: Record<string, string> = {
 		'perceptual-cylindrical': 'Perceptual cylindrical',
@@ -14,9 +18,18 @@
 		video: 'Video / broadcast',
 		subtractive: 'Subtractive'
 	};
-	const FAMILY_ORDER = ['perceptual-cylindrical', 'lab', 'hue', 'rgb', 'tristimulus', 'video', 'subtractive'];
+	const FAMILY_ORDER = [
+		'perceptual-cylindrical',
+		'lab',
+		'hue',
+		'rgb',
+		'tristimulus',
+		'video',
+		'subtractive'
+	];
 	const pickable = allModels().filter(
-		(m) => m.backed && m.ctor && m.channels.length === 3 && m.family !== 'system' && m.family !== 'other'
+		(m) =>
+			m.backed && m.ctor && m.channels.length === 3 && m.family !== 'system' && m.family !== 'other'
 	);
 	const grouped = FAMILY_ORDER.map((f) => ({
 		label: FAMILY_LABEL[f] ?? f,
@@ -31,7 +44,9 @@
 		{ label: 'Max', n: 40 }
 	];
 
-	let modelId = $state('oklch');
+	// Seed from the pinned id when embedded; the $effect below keeps it in sync.
+	// svelte-ignore state_referenced_locally
+	let modelId = $state(pinnedId && getModel(pinnedId) ? pinnedId : 'oklch');
 	let density = $state(22);
 	let vals = $state<number[]>([0.7, 0.15, 250]);
 	let yaw = $state(-0.7);
@@ -42,6 +57,11 @@
 	let lastY = 0;
 
 	const def = $derived(getModel(modelId) as ModelDef);
+
+	// When embedded pinned to one model (encyclopedia), follow the parent's id.
+	$effect(() => {
+		if (pinnedId && pinnedId !== modelId && getModel(pinnedId)) modelId = pinnedId;
+	});
 
 	type Vec3 = { x: number; y: number; z: number };
 
@@ -65,8 +85,12 @@
 			return { hueIdx, kind: 'lc', lightIdx, chromaIdx };
 		}
 		// hue + whiteness + blackness (HWB) → a bicone
-		const wIdx = ch.findIndex((c, i) => i !== hueIdx && (c.localKey === 'w' || /white/i.test(c.label)));
-		const bIdx = ch.findIndex((c, i) => i !== hueIdx && (c.localKey === 'b' || /black/i.test(c.label)));
+		const wIdx = ch.findIndex(
+			(c, i) => i !== hueIdx && (c.localKey === 'w' || /white/i.test(c.label))
+		);
+		const bIdx = ch.findIndex(
+			(c, i) => i !== hueIdx && (c.localKey === 'b' || /black/i.test(c.label))
+		);
 		if (wIdx >= 0 && bIdx >= 0 && wIdx !== bIdx) return { hueIdx, kind: 'wb', wIdx, bIdx };
 		return null;
 	}
@@ -74,7 +98,8 @@
 	/** For cartesian models: which channel goes on the vertical axis, plus x/z. */
 	function boxAxes(d: ModelDef): [number, number, number] {
 		const li = d.channels.findIndex(
-			(c) => /light|lumin|value|tone|bright|intens/i.test(c.label) || /^(l|j|i|t|v)$/i.test(c.localKey)
+			(c) =>
+				/light|lumin|value|tone|bright|intens/i.test(c.label) || /^(l|j|i|t|v)$/i.test(c.localKey)
 		);
 		const yi = li < 0 ? 1 : li;
 		const rest = [0, 1, 2].filter((i) => i !== yi);
@@ -116,7 +141,8 @@
 		const info = cylInfo(d);
 		if (info) {
 			const [hLo, hHi] = ch[info.hueIdx].range;
-			const angle = (cv: ColorValue) => ((cv.channel(ch[info.hueIdx].key) - hLo) / (hHi - hLo)) * 2 * Math.PI;
+			const angle = (cv: ColorValue) =>
+				((cv.channel(ch[info.hueIdx].key) - hLo) / (hHi - hLo)) * 2 * Math.PI;
 			if (info.kind === 'lc') {
 				const [lLo, lHi] = ch[info.lightIdx].range;
 				const [cLo, cHi] = ch[info.chromaIdx].range;
@@ -159,16 +185,27 @@
 		const layout = layoutFor(d);
 		const node = (r: number, g: number, b: number) => ({
 			p: layout(ColorValue.from({ mode: 'rgb', r, g, b } as never)),
-			rgb: [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)] as [number, number, number]
+			rgb: [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)] as [
+				number,
+				number,
+				number
+			]
 		});
 		// six faces of the unit sRGB cube
 		const faces: ((u: number, v: number) => [number, number, number])[] = [
-			(u, v) => [0, u, v], (u, v) => [1, u, v],
-			(u, v) => [u, 0, v], (u, v) => [u, 1, v],
-			(u, v) => [u, v, 0], (u, v) => [u, v, 1]
+			(u, v) => [0, u, v],
+			(u, v) => [1, u, v],
+			(u, v) => [u, 0, v],
+			(u, v) => [u, 1, v],
+			(u, v) => [u, v, 0],
+			(u, v) => [u, v, 1]
 		];
 		const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
-		const cross = (a: Vec3, b: Vec3): Vec3 => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
+		const cross = (a: Vec3, b: Vec3): Vec3 => ({
+			x: a.y * b.z - a.z * b.y,
+			y: a.z * b.x - a.x * b.z,
+			z: a.x * b.y - a.y * b.x
+		});
 		const normal = (a: Vec3, b: Vec3, c: Vec3): Vec3 => {
 			const n = cross(sub(b, a), sub(c, a));
 			const len = Math.hypot(n.x, n.y, n.z) || 1;
@@ -191,8 +228,15 @@
 			}
 			for (let i = 0; i < G; i++) {
 				for (let j = 0; j < G; j++) {
-					const a = grid[i][j], b = grid[i][j + 1], c = grid[i + 1][j + 1], e = grid[i + 1][j];
-					prims.push({ v: [a.p, b.p, c.p, e.p], n: normal(a.p, b.p, e.p), rgb: avg([a.rgb, b.rgb, c.rgb, e.rgb]) });
+					const a = grid[i][j],
+						b = grid[i][j + 1],
+						c = grid[i + 1][j + 1],
+						e = grid[i + 1][j];
+					prims.push({
+						v: [a.p, b.p, c.p, e.p],
+						n: normal(a.p, b.p, e.p),
+						rgb: avg([a.rgb, b.rgb, c.rgb, e.rgb])
+					});
 				}
 			}
 		}
@@ -211,8 +255,13 @@
 		cv.height = h * dpr;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		ctx.clearRect(0, 0, w, h);
-		const cx = w / 2, cy = h / 2, scale = Math.min(w, h) * 0.64;
-		const cosY = Math.cos(yaw), sinY = Math.sin(yaw), cosX = Math.cos(pitch), sinX = Math.sin(pitch);
+		const cx = w / 2,
+			cy = h / 2,
+			scale = Math.min(w, h) * 0.64;
+		const cosY = Math.cos(yaw),
+			sinY = Math.sin(yaw),
+			cosX = Math.cos(pitch),
+			sinX = Math.sin(pitch);
 		const rot = (p: Vec3): Vec3 => {
 			const x1 = p.x * cosY - p.z * sinY;
 			const z1 = p.x * sinY + p.z * cosY;
@@ -236,7 +285,8 @@
 			ctx.lineWidth = 1;
 			ctx.beginPath();
 			pr.rv.forEach((p, i) => {
-				const sx = cx + p.x * scale, sy = cy - p.y * scale;
+				const sx = cx + p.x * scale,
+					sy = cy - p.y * scale;
 				if (i === 0) ctx.moveTo(sx, sy);
 				else ctx.lineTo(sx, sy);
 			});
@@ -246,7 +296,9 @@
 		}
 
 		// current-color marker, placed in the same layout
-		const mp = layoutFor(def)(current ?? ColorValue.from({ mode: 'rgb', r: 0, g: 0, b: 0 } as never));
+		const mp = layoutFor(def)(
+			current ?? ColorValue.from({ mode: 'rgb', r: 0, g: 0, b: 0 } as never)
+		);
 		const m = rot(mp);
 		ctx.beginPath();
 		ctx.arc(cx + m.x * scale, cy - m.y * scale, 8, 0, 6.2832);
@@ -289,60 +341,65 @@
 	}
 </script>
 
-<div class="mv">
-	<div class="mv-controls">
-		<div class="mv-row">
-			<label class="mv-select">
-				<span>Model</span>
-				<select class="select" bind:value={modelId}>
-					{#each grouped as g (g.label)}
-						<optgroup label={g.label}>
-							{#each g.models as m (m.id)}
-								<option value={m.id}>{m.label}</option>
+<div class="mv" class:compact>
+	{#if !compact}
+		<div class="mv-controls">
+			<div class="mv-row">
+				{#if !pinnedId}
+					<label class="mv-select">
+						<span>Model</span>
+						<select class="select" bind:value={modelId}>
+							{#each grouped as g (g.label)}
+								<optgroup label={g.label}>
+									{#each g.models as m (m.id)}
+										<option value={m.id}>{m.label}</option>
+									{/each}
+								</optgroup>
 							{/each}
-						</optgroup>
-					{/each}
-				</select>
-			</label>
-			<label class="mv-select mv-density">
-				<span>Resolution</span>
-				<select class="select" bind:value={density}>
-					{#each DENSITY as d (d.n)}
-						<option value={d.n}>{d.label}</option>
-					{/each}
-				</select>
-			</label>
-		</div>
+						</select>
+					</label>
+				{/if}
+				<label class="mv-select mv-density">
+					<span>Resolution</span>
+					<select class="select" bind:value={density}>
+						{#each DENSITY as d (d.n)}
+							<option value={d.n}>{d.label}</option>
+						{/each}
+					</select>
+				</label>
+			</div>
 
-		{#if MODEL_DOCS[modelId]?.about}
-			<p class="mv-about">{MODEL_DOCS[modelId]?.about}</p>
-		{/if}
+			{#if MODEL_DOCS[modelId]?.about}
+				<p class="mv-about">{MODEL_DOCS[modelId]?.about}</p>
+			{/if}
 
-		<div class="mv-sliders">
-			{#each def.channels as ch, i (ch.key)}
-				<div class="mv-slider">
-					<div class="mv-slabel">
-						<code>.{ch.localKey}</code>
-						<span class="mv-chname">{ch.label}</span>
-						<span class="mv-val">{+vals[i]?.toFixed(ch.range[1] - ch.range[0] <= 2 ? 3 : 1)}</span>
+			<div class="mv-sliders">
+				{#each def.channels as ch, i (ch.key)}
+					<div class="mv-slider">
+						<div class="mv-slabel">
+							<code>.{ch.localKey}</code>
+							<span class="mv-chname">{ch.label}</span>
+							<span class="mv-val">{+vals[i]?.toFixed(ch.range[1] - ch.range[0] <= 2 ? 3 : 1)}</span
+							>
+						</div>
+						<input
+							type="range"
+							min={ch.range[0]}
+							max={ch.range[1]}
+							step={(ch.range[1] - ch.range[0]) / 240}
+							bind:value={vals[i]}
+						/>
 					</div>
-					<input
-						type="range"
-						min={ch.range[0]}
-						max={ch.range[1]}
-						step={(ch.range[1] - ch.range[0]) / 240}
-						bind:value={vals[i]}
-					/>
-				</div>
-			{/each}
-		</div>
+				{/each}
+			</div>
 
-		<div class="mv-result">
-			<span class="mv-swatch" style="background:{curHex}"></span>
-			<code>{curHex}</code>
-			{#if !inGamut}<span class="mv-oog">out of sRGB</span>{/if}
+			<div class="mv-result">
+				<span class="mv-swatch" style="background:{curHex}"></span>
+				<code>{curHex}</code>
+				{#if !inGamut}<span class="mv-oog">out of sRGB</span>{/if}
+			</div>
 		</div>
-	</div>
+	{/if}
 
 	<div class="mv-canvas-wrap">
 		<canvas
@@ -353,7 +410,9 @@
 			onpointercancel={onUp}
 			ondblclick={reset}
 		></canvas>
-		<span class="mv-hint">{isCyl ? 'cylindrical' : 'cartesian'} layout · drag to rotate · double-click resets</span>
+		<span class="mv-hint"
+			>{isCyl ? 'cylindrical' : 'cartesian'} layout · drag to rotate · double-click resets</span
+		>
 	</div>
 </div>
 
@@ -365,6 +424,10 @@
 		height: 100%;
 		min-height: 0;
 		padding: 12px;
+	}
+	.mv.compact {
+		grid-template-columns: 1fr;
+		padding: 0;
 	}
 	.mv-controls {
 		display: flex;

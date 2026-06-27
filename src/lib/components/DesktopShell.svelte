@@ -11,6 +11,7 @@
 	import { app } from '$lib/state/app.svelte';
 	import { ui, type Tab } from '$lib/state/ui.svelte';
 	import { completion, hover } from '$lib/dsl/editor-bindings';
+	import { base } from '$app/paths';
 	import { encodeHash } from '$lib/persistence/url-hash';
 	import { saveScheme, loadScheme, listSchemes } from '$lib/persistence/local-storage';
 	import { examples } from '../../routes/examples';
@@ -21,7 +22,9 @@
 		if (e.key === 'Escape' && showDocs) showDocs = false;
 	}
 
-	const EXAMPLES: Record<string, string> = Object.fromEntries(examples.map((e) => [e.name, e.source]));
+	const EXAMPLES: Record<string, string> = Object.fromEntries(
+		examples.map((e) => [e.name, e.source])
+	);
 	const exampleNames = examples.map((e) => e.name);
 	let currentExample = $state(exampleNames[0]);
 
@@ -96,7 +99,9 @@
 		</select>
 
 		{#if app.result.errors.length > 0}
-			<span class="err-chip">{app.result.errors.length} error{app.result.errors.length > 1 ? 's' : ''}</span>
+			<span class="err-chip"
+				>{app.result.errors.length} error{app.result.errors.length > 1 ? 's' : ''}</span
+			>
 		{/if}
 
 		<div class="spacer"></div>
@@ -109,12 +114,41 @@
 		{/if}
 		<button class="btn" onclick={save}>Save</button>
 		<button class="btn" onclick={share}>{shareLabel}</button>
-		<button class="btn {showDocs ? 'btn-accent' : ''}" onclick={() => (showDocs = !showDocs)}>API</button>
-		<button class="icon-btn" onclick={() => ui.toggleTheme()} aria-label="Toggle theme" title="Toggle theme">
+		<a class="btn" href="{base}/models" title="Color models & systems encyclopedia">Models</a>
+		<button class="btn {showDocs ? 'btn-accent' : ''}" onclick={() => (showDocs = !showDocs)}
+			>API</button
+		>
+		<button
+			class="icon-btn"
+			onclick={() => ui.toggleTheme()}
+			aria-label="Toggle theme"
+			title="Toggle theme"
+		>
 			{#if ui.theme === 'dark'}
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					><circle cx="12" cy="12" r="4" /><path
+						d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+					/></svg
+				>
 			{:else}
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg
+				>
 			{/if}
 		</button>
 	</header>
@@ -126,8 +160,22 @@
 				<div class="pane-head">
 					<span class="pane-title">Editor</span>
 					<div class="spacer"></div>
-					<button class="icon-btn" onclick={() => (ui.editorCollapsed = true)} aria-label="Collapse editor" title="Collapse editor">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+					<button
+						class="icon-btn"
+						onclick={() => (ui.editorCollapsed = true)}
+						aria-label="Collapse editor"
+						title="Collapse editor"
+					>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg
+						>
 					</button>
 				</div>
 				<div class="editor-host scroll">
@@ -136,7 +184,9 @@
 				{#if app.result.errors.length > 0}
 					<div class="errorbar scroll">
 						{#each app.result.errors as err (err.line + err.message)}
-							<div class="err-row"><span class="err-line">line {err.line}</span><span>{err.message}</span></div>
+							<div class="err-row">
+								<span class="err-line">line {err.line}</span><span>{err.message}</span>
+							</div>
 						{/each}
 					</div>
 				{/if}
@@ -154,8 +204,21 @@
 				<div class="grip"><span></span><span></span><span></span></div>
 			</div>
 		{:else}
-			<button class="editor-rail" onclick={() => (ui.editorCollapsed = false)} title="Expand editor">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+			<button
+				class="editor-rail"
+				onclick={() => (ui.editorCollapsed = false)}
+				title="Expand editor"
+			>
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg
+				>
 				<span class="rail-label">Editor</span>
 			</button>
 		{/if}
@@ -164,11 +227,16 @@
 			<div class="pane-head">
 				<div class="seg">
 					{#each TABS as t (t.id)}
-						<button class="seg-item {ui.tab === t.id ? 'active' : ''}" onclick={() => (ui.tab = t.id)}>{t.label}</button>
+						<button
+							class="seg-item {ui.tab === t.id ? 'active' : ''}"
+							onclick={() => (ui.tab = t.id)}>{t.label}</button
+						>
 					{/each}
 				</div>
 				<div class="spacer"></div>
-				<span class="chip">{app.scheme.entries.length} color{app.scheme.entries.length !== 1 ? 's' : ''}</span>
+				<span class="chip"
+					>{app.scheme.entries.length} color{app.scheme.entries.length !== 1 ? 's' : ''}</span
+				>
 			</div>
 			<div class="analyze-body">
 				{#if ui.tab === 'inspector'}
