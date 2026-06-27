@@ -47,6 +47,7 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 10px;
+		min-width: 0;
 		padding: 7px 11px;
 		border-bottom: 1px solid var(--border);
 		background: var(--surface-2);
@@ -60,6 +61,9 @@
 		font-family: 'JetBrains Mono', ui-monospace, monospace;
 		font-size: 10.5px;
 		color: var(--text-faint);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.pcard-body {
 		padding: 11px;

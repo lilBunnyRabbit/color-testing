@@ -271,4 +271,23 @@
 		margin-top: 3px;
 		white-space: nowrap;
 	}
+
+	/* mobile (narrow viewport) */
+	@media (max-width: 480px) {
+		.harmony {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.wheel {
+			width: 96px;
+			height: 96px;
+			align-self: center;
+		}
+		.swatches {
+			width: 100%;
+		}
+		.mix {
+			overflow-x: auto;
+		}
+	}
 </style>

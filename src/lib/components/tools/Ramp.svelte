@@ -153,4 +153,38 @@
 		color: var(--text-faint);
 		font-size: 13px;
 	}
+
+	@media (max-width: 640px) {
+		.controls {
+			align-items: stretch;
+		}
+		.field {
+			width: 100%;
+		}
+		.seg {
+			width: 100%;
+		}
+		.seg-item {
+			flex: 1;
+			min-height: 40px;
+		}
+		.btn-accent {
+			margin-left: 0;
+			width: 100%;
+			min-height: 40px;
+		}
+		.ramp {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			scrollbar-width: none;
+		}
+		.ramp::-webkit-scrollbar {
+			display: none;
+		}
+		.step {
+			flex: 0 0 auto;
+			min-width: 48px;
+		}
+	}
 </style>

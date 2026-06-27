@@ -336,4 +336,13 @@
 		color: var(--text-muted);
 		margin-left: auto;
 	}
+
+	@media (max-width: 520px) {
+		.convs {
+			grid-template-columns: 1fr;
+		}
+		.conv-v {
+			white-space: normal;
+		}
+	}
 </style>

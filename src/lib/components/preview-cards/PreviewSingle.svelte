@@ -441,4 +441,12 @@
 		font-size: 10px;
 		color: var(--text-muted);
 	}
+
+	/* On phones the embedded 3D ModelViewer is heavy/awkward; shrink its box.
+	   (ModelViewer sets touch-action:none, so dragging won't hijack scroll.) */
+	@media (max-width: 480px) {
+		.space-box {
+			height: 210px;
+		}
+	}
 </style>

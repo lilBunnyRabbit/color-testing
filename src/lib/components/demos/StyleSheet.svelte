@@ -328,4 +328,24 @@
 		font-weight: 600;
 		opacity: var(--op-muted);
 	}
+
+	/* Small screens: tighten padding, scale display type, and pack grids denser */
+	@media (max-width: 640px) {
+		.sheet {
+			padding: 16px;
+		}
+		.sheet-title {
+			font-size: 26px;
+		}
+		.t-h1 {
+			font-size: 28px;
+		}
+		.t-h2 {
+			font-size: 20px;
+		}
+		.swatch-grid,
+		.pair-grid {
+			grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		}
+	}
 </style>

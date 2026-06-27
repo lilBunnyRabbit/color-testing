@@ -407,4 +407,12 @@
 		margin-top: 8px;
 		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 	}
+
+	/* Small-screen polish: tighten padding and let cards pack at a lower floor */
+	@media (max-width: 600px) {
+		.collateral-root {
+			padding: 14px;
+			grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		}
+	}
 </style>

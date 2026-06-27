@@ -192,4 +192,16 @@
 		color: var(--text-faint);
 		font-size: 13px;
 	}
+	@media (max-width: 520px) {
+		.css-row {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.css-row .btn {
+			min-height: 40px;
+		}
+		.chip-col {
+			min-width: 40px;
+		}
+	}
 </style>

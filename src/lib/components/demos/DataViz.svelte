@@ -538,4 +538,20 @@
 		color: var(--fg);
 		opacity: var(--op-muted);
 	}
+
+	/* ── Small screens / mobile shell ── */
+	@media (max-width: 640px) {
+		.dv-root {
+			padding: 14px;
+		}
+		.dv-grid {
+			grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		}
+		.dv-bars {
+			height: 140px;
+		}
+		.dv-svg {
+			height: 140px;
+		}
+	}
 </style>

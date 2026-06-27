@@ -292,6 +292,8 @@
 		font-size: 11px;
 		line-height: 1.5;
 		color: var(--text-faint, #777);
+		overflow-wrap: anywhere;
+		word-break: break-word;
 	}
 	.note code {
 		font-family: inherit;
@@ -300,5 +302,17 @@
 		background: var(--surface-2, #1a1a1a);
 		padding: 1px 4px;
 		border-radius: var(--radius-sm, 4px);
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
+	/* ── narrow viewports ── */
+	@media (max-width: 480px) {
+		.specimen {
+			padding: 12px;
+		}
+		.sp-h1 {
+			font-size: 24px;
+		}
 	}
 </style>

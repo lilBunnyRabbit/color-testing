@@ -201,4 +201,18 @@
 		color: var(--text-faint);
 		font-size: 13px;
 	}
+
+	@media (max-width: 520px) {
+		.compare {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.side {
+			min-width: 0;
+		}
+		.arrow {
+			align-self: center;
+			transform: rotate(90deg);
+		}
+	}
 </style>

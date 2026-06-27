@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { app } from '$lib/state/app.svelte';
+	import { ui } from '$lib/state/ui.svelte';
 	import { cssVars, autoAssign, type Roles } from '$lib/scheme/roles';
 	import { simulateVision, visionSimulations } from '$lib/analysis/cvd';
 	import { wcagLevels, wcagColor } from '$lib/analysis/wcag';
@@ -7,10 +8,13 @@
 	import StyleSheet from './demos/StyleSheet.svelte';
 	import Collateral from './demos/Collateral.svelte';
 	import DataViz from './demos/DataViz.svelte';
+	import Sheet from './mobile/Sheet.svelte';
 
 	const demos = ['Landing', 'Dashboard', 'Blog', 'Brand mark', 'Style sheet', 'Collateral', 'Data viz'];
 	let demoIndex = $state(0);
-	let panelOpen = $state(true);
+	// Desktop shows the roles panel inline by default; on a phone it's a sheet,
+	// closed until the user taps "Roles & audit".
+	let panelOpen = $state(!ui.isMobile);
 
 	// Re-run auto-assignment whenever the set of color names changes.
 	let lastSig = '';
@@ -75,53 +79,61 @@
 	</div>
 
 	<div class="pv-body">
-		{#if panelOpen}
-			<aside class="pv-panel">
-				<div class="pv-section-title">Color Roles</div>
-				{#each roleRows as [key, label, optional] (key)}
-					<div class="role-row">
-						<div
-							class="role-swatch"
-							style="background: {app.roles[key] >= 0
-								? (app.scheme.entries[app.roles[key]]?.color.toCSS() ?? 'var(--border-strong)')
-								: 'var(--border-strong)'}"
-						></div>
-						<label class="role-label"
-							>{label}
-							<select class="role-select" bind:value={app.roles[key]}>
-								{#if optional}<option value={-1}>None</option>{/if}
-								{#each app.scheme.entries as e, i (e.name)}
-									<option value={i}>{e.name} ({e.color.hex})</option>
-								{/each}
-							</select>
-						</label>
+		{#snippet panelBody()}
+			<div class="pv-section-title">Color Roles</div>
+			{#each roleRows as [key, label, optional] (key)}
+				<div class="role-row">
+					<div
+						class="role-swatch"
+						style="background: {app.roles[key] >= 0
+							? (app.scheme.entries[app.roles[key]]?.color.toCSS() ?? 'var(--border-strong)')
+							: 'var(--border-strong)'}"
+					></div>
+					<label class="role-label"
+						>{label}
+						<select class="role-select" bind:value={app.roles[key]}>
+							{#if optional}<option value={-1}>None</option>{/if}
+							{#each app.scheme.entries as e, i (e.name)}
+								<option value={i}>{e.name} ({e.color.hex})</option>
+							{/each}
+						</select>
+					</label>
+				</div>
+			{/each}
+
+			<div class="pv-section-title">Foreground Opacities</div>
+			{#each opacityRows as [key, label] (key)}
+				<label class="opacity-label">
+					<span class="opacity-name">{label}</span>
+					<input type="range" min="0" max="1" step="0.01" bind:value={app.opacities[key]} />
+					<span class="opacity-value">{app.opacities[key].toFixed(2)}</span>
+				</label>
+			{/each}
+
+			<div class="pv-section-title">Audit ({fails} failing)</div>
+			<div class="audit-list">
+				{#each app.audit as item (item.label)}
+					{@const level = item.large ? wcagLevels(item.ratio).large : wcagLevels(item.ratio).normal}
+					<div class="audit-row" class:audit-fail={level === 'Fail'}>
+						<div class="audit-label">{item.label}</div>
+						<div class="audit-detail">{item.fg} / {item.bg}</div>
+						<div class="audit-result">
+							<span class="audit-ratio">{item.ratio.toFixed(2)}</span>
+							<span class="audit-level" style="color: {wcagColor(level)}">{level}</span>
+						</div>
 					</div>
 				{/each}
+			</div>
+		{/snippet}
 
-				<div class="pv-section-title">Foreground Opacities</div>
-				{#each opacityRows as [key, label] (key)}
-					<label class="opacity-label">
-						<span class="opacity-name">{label}</span>
-						<input type="range" min="0" max="1" step="0.01" bind:value={app.opacities[key]} />
-						<span class="opacity-value">{app.opacities[key].toFixed(2)}</span>
-					</label>
-				{/each}
+		{#if !ui.isMobile && panelOpen}
+			<aside class="pv-panel">{@render panelBody()}</aside>
+		{/if}
 
-				<div class="pv-section-title">Audit ({fails} failing)</div>
-				<div class="audit-list">
-					{#each app.audit as item (item.label)}
-						{@const level = item.large ? wcagLevels(item.ratio).large : wcagLevels(item.ratio).normal}
-						<div class="audit-row" class:audit-fail={level === 'Fail'}>
-							<div class="audit-label">{item.label}</div>
-							<div class="audit-detail">{item.fg} / {item.bg}</div>
-							<div class="audit-result">
-								<span class="audit-ratio">{item.ratio.toFixed(2)}</span>
-								<span class="audit-level" style="color: {wcagColor(level)}">{level}</span>
-							</div>
-						</div>
-					{/each}
-				</div>
-			</aside>
+		{#if ui.isMobile}
+			<Sheet open={panelOpen} onclose={() => (panelOpen = false)} title="Roles & audit">
+				<div class="pv-panel-sheet">{@render panelBody()}</div>
+			</Sheet>
 		{/if}
 
 		<main class="demo-scroll">
@@ -899,5 +911,122 @@
 		font-weight: 600;
 		padding: 1px 8px;
 		border-radius: 99px;
+	}
+
+	/* roles/audit panel content when hosted in the mobile sheet */
+	.pv-panel-sheet {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		color: var(--text-muted);
+	}
+
+	/* ---- mobile (phone) layout: full-width demo, scrollable chrome,
+	   single-column website mockups ---- */
+	@media (max-width: 768px) {
+		.pv-toolbar {
+			flex-wrap: wrap;
+			gap: 8px 10px;
+			padding: 9px 12px;
+		}
+		.pv-toolbar .seg {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			max-width: 100%;
+			scrollbar-width: none;
+		}
+		.pv-toolbar .seg::-webkit-scrollbar {
+			display: none;
+		}
+		.pv-toolbar .seg-item {
+			flex: 0 0 auto;
+			white-space: nowrap;
+		}
+		.pv-spacer {
+			display: none;
+		}
+
+		.d-cards-2,
+		.d-cards-3,
+		.d-cards-4 {
+			grid-template-columns: 1fr;
+		}
+		.d-stats-grid {
+			grid-template-columns: 1fr 1fr;
+			gap: 16px;
+		}
+		.d-nav-inner {
+			gap: 12px;
+			padding: 12px 16px;
+			flex-wrap: wrap;
+		}
+		.d-nav-links {
+			gap: 14px;
+		}
+		.d-hero {
+			padding: 36px 18px;
+		}
+		.d-hero-title {
+			font-size: 30px;
+		}
+		.d-hero-sub {
+			font-size: 15px;
+			margin-top: 12px;
+		}
+		.d-hero-actions {
+			flex-direction: column;
+		}
+		.d-section {
+			padding: 32px 16px;
+		}
+		.d-section-title {
+			font-size: 24px;
+		}
+		.d-stats-banner,
+		.d-cta-banner {
+			padding: 32px 18px;
+		}
+		.d-cta-title {
+			font-size: 24px;
+		}
+
+		.dash {
+			flex-direction: column;
+		}
+		.dash-sidebar {
+			width: 100%;
+			border-right: none;
+			border-bottom: 1px solid var(--border);
+		}
+		.dash-nav {
+			flex-direction: row;
+			flex-wrap: wrap;
+		}
+		.dash-nav-item {
+			font-size: 13px;
+			padding: 7px 10px;
+		}
+		.dash-content {
+			padding: 14px;
+		}
+		.dash-table {
+			font-size: 12.5px;
+		}
+		.dash-table th,
+		.dash-table td {
+			padding: 7px 6px;
+		}
+
+		.blog-layout {
+			grid-template-columns: 1fr;
+			gap: 20px;
+			padding: 24px 16px;
+		}
+		.blog-title {
+			font-size: 26px;
+		}
+		.blog-body {
+			font-size: 15px;
+		}
 	}
 </style>

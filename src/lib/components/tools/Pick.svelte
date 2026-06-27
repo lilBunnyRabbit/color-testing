@@ -145,4 +145,26 @@
 		font-size: 12px;
 		color: var(--danger);
 	}
+
+	@media (max-width: 520px) {
+		/* Let each control take its own full row for easier touch typing */
+		.controls > .field,
+		.controls > .btn {
+			flex: 1 1 100%;
+		}
+		/* Full-width inputs: override .hex-in fixed width and stretch both inputs */
+		.field .select,
+		.hex-in {
+			width: 100%;
+		}
+		/* Drop the desktop right-alignment so Insert sits on its own full row */
+		.btn-accent {
+			margin-left: 0;
+		}
+		/* Comfortable touch targets */
+		.field .select,
+		.btn {
+			min-height: 40px;
+		}
+	}
 </style>

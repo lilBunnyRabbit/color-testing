@@ -287,4 +287,16 @@
 		align-items: center;
 		justify-content: center;
 	}
+
+	@media (max-width: 600px) {
+		.bm-root {
+			padding: 14px;
+		}
+		.bm-lockup-grid {
+			grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		}
+		.bm-treatment-grid {
+			grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		}
+	}
 </style>

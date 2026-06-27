@@ -81,4 +81,28 @@
 	.tool-host {
 		max-width: 760px;
 	}
+
+	@media (max-width: 640px) {
+		.seg {
+			display: flex;
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			scrollbar-width: none;
+		}
+		.seg::-webkit-scrollbar {
+			display: none;
+		}
+		.seg-item {
+			flex: 0 0 auto;
+			white-space: nowrap;
+			min-height: 40px;
+		}
+		.studio-body {
+			padding: 12px;
+		}
+		.tool-host {
+			max-width: none;
+		}
+	}
 </style>

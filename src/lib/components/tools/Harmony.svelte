@@ -165,4 +165,14 @@
 		color: var(--text-faint);
 		font-size: 13px;
 	}
+
+	@media (max-width: 520px) {
+		.wheel {
+			width: min(180px, 62vw);
+			height: auto;
+		}
+		.swatches {
+			min-width: 100%;
+		}
+	}
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { app } from '$lib/state/app.svelte';
+	import { ui } from '$lib/state/ui.svelte';
 	import type { ColorValue } from '$lib/models';
 	import { contrastRatioAlpha } from '$lib/analysis/contrast';
 	import { wcagLevels, wcagColor } from '$lib/analysis/wcag';
@@ -28,6 +29,11 @@
 	);
 	const fgAlpha = $derived(app.fgAlpha);
 	let contrastModel = $state<'wcag' | 'apca'>('wcag');
+
+	// Mobile single-axis view: pick one background, list every color as fg on it.
+	let mBgIdx = $state(0);
+	const safeBgIdx = $derived(colors.length ? Math.min(mBgIdx, colors.length - 1) : 0);
+	const mBg = $derived(colors[safeBgIdx] ?? null);
 
 	const sel = $derived(
 		selected && colors[selected.bgIdx] && colors[selected.fgIdx]
@@ -113,6 +119,56 @@
 
 	{#if colors.length === 0}
 		<div class="matrix-empty">Define at least one color in the editor to see the contrast matrix.</div>
+	{:else if ui.isMobile}
+		<div class="m-matrix">
+			<div class="m-bgpick">
+				<span class="m-bgpick-label">Background</span>
+				<div class="m-bgpick-row scroll">
+					{#each colors as c, i (c.name + i)}
+						<button class="m-bgchip" class:active={i === safeBgIdx} onclick={() => (mBgIdx = i)}>
+							<span class="m-bgchip-sw" style="background: {c.color.toCSS()}"></span>
+							<span class="m-bgchip-name">{c.name}</span>
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			{#if mBg}
+				<div class="m-samples" style="background: {mBg.color.toCSS()}">
+					{#each colors as fg, fi (fg.name + fi)}
+						{#if fi !== safeBgIdx}
+							{@const ratio = contrastRatioAlpha(fg.color, mBg.color, fgAlpha)}
+							{@const levels = wcagLevels(ratio)}
+							{@const lc = apcaContrast(fg.color, mBg.color)}
+							{@const use = apcaUse(lc)}
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
+							<button
+								class="m-sample"
+								style="color: {fg.color.toCSS()}; --fg-alpha: {fgAlpha}"
+								onclick={() => selectCell(safeBgIdx, fi)}
+							>
+								<div class="m-sample-top">
+									<span class="m-sample-sw" style="background: {fg.color.toCSS()}"></span>
+									<span class="m-sample-name">{fg.name}</span>
+									<span class="m-sample-metric">
+										{#if contrastModel === 'wcag'}
+											<b>{ratio.toFixed(2)}</b><i style="background: {wcagColor(levels.normal)}">{levels.normal}</i>
+										{:else}
+											<b>Lc {Math.round(lc)}</b><i style="background: {apcaColor(use)}">{use}</i>
+										{/if}
+									</span>
+								</div>
+								<div class="m-sample-text">
+									<span class="m-st-lg">Heading sample</span>
+									<span class="m-st-md">Body text — the quick brown fox</span>
+									<span class="m-st-sm">Thin caption text</span>
+								</div>
+							</button>
+						{/if}
+					{/each}
+				</div>
+			{/if}
+		</div>
 	{:else}
 		<div class="matrix-scroll">
 			<div class="matrix-grid" style="grid-template-columns: {colTemplate}">
@@ -762,5 +818,177 @@
 		overflow-x: auto;
 		margin: 0;
 		line-height: 1.5;
+	}
+
+	/* ---- mobile single-axis contrast view ---- */
+	.m-matrix {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+	}
+	.m-bgpick {
+		flex-shrink: 0;
+		border-bottom: 1px solid var(--border);
+		background: var(--surface);
+		padding: 8px 0 10px;
+	}
+	.m-bgpick-label {
+		display: block;
+		padding: 0 14px 6px;
+		font-size: 10.5px;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--text-faint);
+	}
+	.m-bgpick-row {
+		display: flex;
+		gap: 8px;
+		overflow-x: auto;
+		padding: 0 14px;
+		-webkit-overflow-scrolling: touch;
+	}
+	.m-bgchip {
+		flex: 0 0 auto;
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		padding: 6px 12px 6px 8px;
+		border: 1px solid var(--border);
+		border-radius: 99px;
+		background: var(--surface);
+		color: var(--text);
+		font-size: 12.5px;
+		cursor: pointer;
+	}
+	.m-bgchip.active {
+		border-color: var(--accent);
+		background: var(--accent-soft);
+		color: var(--accent);
+	}
+	.m-bgchip-sw {
+		width: 16px;
+		height: 16px;
+		border-radius: 50%;
+		border: 1px solid var(--border-strong);
+		flex-shrink: 0;
+	}
+	.m-samples {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		padding: 12px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.m-sample {
+		display: block;
+		width: 100%;
+		text-align: left;
+		border: none;
+		border-radius: var(--radius-sm);
+		padding: 12px 14px;
+		background: transparent;
+		cursor: pointer;
+		box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.18);
+	}
+	.m-sample-top {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		opacity: var(--fg-alpha, 1);
+	}
+	.m-sample-sw {
+		width: 18px;
+		height: 18px;
+		border-radius: 5px;
+		flex-shrink: 0;
+		box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.3);
+	}
+	.m-sample-name {
+		font-size: 14px;
+		font-weight: 650;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.m-sample-metric {
+		margin-left: auto;
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		flex-shrink: 0;
+		font-family: monospace;
+	}
+	.m-sample-metric b {
+		font-size: 13px;
+	}
+	.m-sample-metric i {
+		font-style: normal;
+		font-weight: 700;
+		font-size: 10.5px;
+		color: #0b0b0c;
+		padding: 1px 7px;
+		border-radius: 99px;
+	}
+	.m-sample-text {
+		margin-top: 8px;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		opacity: var(--fg-alpha, 1);
+	}
+	.m-st-lg {
+		font-size: 19px;
+		font-weight: 700;
+		line-height: 1.15;
+	}
+	.m-st-md {
+		font-size: 13px;
+		line-height: 1.3;
+	}
+	.m-st-sm {
+		font-size: 10.5px;
+		font-weight: 300;
+		line-height: 1.3;
+	}
+
+	@media (max-width: 768px) {
+		.matrix-toolbar {
+			flex-wrap: wrap;
+			gap: 8px 10px;
+			padding: 10px 12px;
+		}
+		.tb-spacer {
+			display: none;
+		}
+		.matrix-toolbar .btn {
+			margin-left: auto;
+		}
+
+		.detail-dialog,
+		.info-dialog {
+			width: 100vw;
+			max-width: 100vw;
+			height: 100dvh;
+			max-height: 100dvh;
+			border-radius: 0;
+		}
+		.dialog-inner,
+		.info-inner {
+			height: 100dvh;
+			max-height: 100dvh;
+		}
+		.dialog-stats {
+			margin-left: 0;
+			width: 100%;
+			flex-wrap: wrap;
+			gap: 14px;
+		}
+		.dialog-preview {
+			flex: 1;
+		}
 	}
 </style>

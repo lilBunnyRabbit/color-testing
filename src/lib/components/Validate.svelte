@@ -327,4 +327,42 @@
 		color: var(--text-faint);
 		font-size: 13px;
 	}
+
+	@media (max-width: 640px) {
+		/* (1) Keep the 6 fractional contrast columns legible on narrow screens. */
+		.ct-head,
+		.ct-row {
+			gap: 4px;
+			padding-left: 4px;
+			padding-right: 4px;
+		}
+		.ct-head {
+			font-size: 9px;
+		}
+		.ct-row {
+			font-size: 11px;
+		}
+		.lvl {
+			font-size: 10px;
+		}
+
+		/* (2) Let print rows wrap: name takes its own line, CMYK bars + ink% + proof wrap below. */
+		.p-row {
+			flex-wrap: wrap;
+			gap: 8px 12px;
+		}
+		.p-row .ct-name {
+			flex: 1 1 100%;
+			width: auto;
+		}
+
+		/* (3) Relax similarity level width; full-width sliders with a 40px touch target. */
+		.pair-lvl {
+			width: auto;
+		}
+		.field input[type='range'] {
+			width: 100%;
+			min-height: 40px;
+		}
+	}
 </style>

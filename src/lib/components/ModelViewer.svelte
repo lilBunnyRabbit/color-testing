@@ -499,4 +499,14 @@
 			min-height: 280px;
 		}
 	}
+	@media (max-width: 480px) {
+		.mv-row {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.mv-density {
+			min-width: 0;
+			width: 100%;
+		}
+	}
 </style>

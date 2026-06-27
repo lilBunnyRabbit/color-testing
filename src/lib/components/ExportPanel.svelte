@@ -217,4 +217,35 @@
 		color: var(--text-faint);
 		font-size: 13px;
 	}
+
+	@media (max-width: 640px) {
+		.ex-bar {
+			overflow-x: auto;
+			scrollbar-width: none;
+			-ms-overflow-style: none;
+		}
+		.ex-bar::-webkit-scrollbar {
+			display: none;
+		}
+		.ex-bar .seg {
+			flex-wrap: nowrap;
+		}
+		.ex-hint {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.ex-actions {
+			margin-left: 0;
+			flex-wrap: wrap;
+		}
+		.ex-actions .ex-bg-field,
+		.ex-actions .select,
+		.ex-actions .btn {
+			flex: 1 1 auto;
+			min-height: 40px;
+		}
+		.ex-output {
+			padding-top: 36px;
+		}
+	}
 </style>

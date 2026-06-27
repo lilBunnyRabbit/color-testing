@@ -443,4 +443,28 @@
 		font-weight: 700;
 		letter-spacing: -0.02em;
 	}
+
+	/* ── small screens (mobile shell renders these near full width) ── */
+	@media (max-width: 480px) {
+		/* brandMark: stack the 3 lockup tiles, one per line */
+		.brand-row {
+			flex-direction: column;
+		}
+
+		/* grid: keep header row + first column labels visible while
+		   scrolling the contrast matrix horizontally (.grid is overflow-x:auto) */
+		.grid-head {
+			position: sticky;
+			top: 0;
+			z-index: 1;
+			background: var(--surface);
+		}
+		.grid-head-row,
+		.grid-corner {
+			position: sticky;
+			left: 0;
+			z-index: 2;
+			background: var(--surface);
+		}
+	}
 </style>

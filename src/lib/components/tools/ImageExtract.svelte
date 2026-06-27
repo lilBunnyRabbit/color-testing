@@ -161,4 +161,10 @@
 		font-size: 12px;
 		color: var(--danger);
 	}
+
+	@media (max-width: 420px) {
+		.grid {
+			grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+		}
+	}
 </style>

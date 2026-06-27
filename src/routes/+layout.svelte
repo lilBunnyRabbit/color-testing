@@ -20,7 +20,19 @@
 		} catch {
 			/* ignore */
 		}
+
+		// Desktop/mobile shell gate. Only read matchMedia after mount so the
+		// prerendered + first-client render stay on the desktop shell (no
+		// hydration mismatch); then flip and track viewport changes.
+		const mql = window.matchMedia('(max-width: 768px)');
+		ui.isMobile = mql.matches;
+		const onChange = (e: MediaQueryListEvent) => (ui.isMobile = e.matches);
+		mql.addEventListener('change', onChange);
+
+		ui.mounted = true;
 		ready = true;
+
+		return () => mql.removeEventListener('change', onChange);
 	});
 
 	$effect(() => {
