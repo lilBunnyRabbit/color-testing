@@ -114,6 +114,7 @@
 		{/if}
 		<button class="btn" onclick={save}>Save</button>
 		<button class="btn" onclick={share}>{shareLabel}</button>
+		<a class="btn" href="{base}/mixer" title="Cross-model color mixer">Mixer</a>
 		<a class="btn" href="{base}/models" title="Color models & systems encyclopedia">Models</a>
 		<button class="btn {showDocs ? 'btn-accent' : ''}" onclick={() => (showDocs = !showDocs)}
 			>API</button

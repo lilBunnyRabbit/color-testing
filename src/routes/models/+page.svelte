@@ -2,6 +2,7 @@
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { allModels, getModel, ColorValue, hex, type ModelDef } from '$lib/models';
+	import { seedVals, channelGradient, fmtChannel } from '$lib/mixer/engine';
 	import { MODEL_DOCS } from '$lib/dsl/model-docs';
 	import { ENCYCLOPEDIA } from '$lib/dsl/encyclopedia';
 	import { CHANNEL_DOCS } from '$lib/dsl/channel-docs';
@@ -121,13 +122,10 @@
 	let vals = $state<number[]>([]);
 	let seededFor = '';
 
+	// Read this color's channels in the selected model (range-midpoint fallback for
+	// undefined/NaN fields, e.g. achromatic hue). Shared with the Mixer engine.
 	function colorToVals(c: ColorValue): number[] {
-		try {
-			const proj = c.project(def.mode) as unknown as Record<string, number | undefined>;
-			return def.channels.map((ch) => proj[ch.culoriField] ?? (ch.range[0] + ch.range[1]) / 2);
-		} catch {
-			return def.channels.map((ch) => (ch.range[0] + ch.range[1]) / 2);
-		}
+		return seedVals(c, def);
 	}
 
 	// Seed the sliders from the active color whenever the model changes.
@@ -189,34 +187,13 @@
 
 	// Per-channel gradient track: sample the color produced by sweeping ONLY this
 	// channel across its range while the others hold their current value — so the
-	// slider previews where moving it will push the color. (sRGB-clamped via hex.)
-	const GRAD_STOPS = 16;
+	// slider previews where moving it will push the color. Shared with the Mixer.
 	const gradients = $derived.by(() => {
 		if (!def?.ctor || vals.length !== def.channels.length) return [];
-		return def.channels.map((ch, i) => {
-			const [lo, hi] = ch.range;
-			const stops: string[] = [];
-			for (let s = 0; s <= GRAD_STOPS; s++) {
-				const probe = vals.map(Number);
-				probe[i] = lo + (s / GRAD_STOPS) * (hi - lo);
-				let stop = 'transparent';
-				try {
-					stop = ColorValue.from(def.ctor!.build(probe)).hex;
-				} catch {
-					/* keep transparent for the rare un-buildable sample */
-				}
-				stops.push(stop);
-			}
-			return `linear-gradient(to right, ${stops.join(', ')})`;
-		});
+		return def.channels.map((_, i) => channelGradient(def, vals, i, 16));
 	});
 
-	function fv(v: number | undefined | null): string {
-		if (v == null || Number.isNaN(v)) return '–';
-		const a = Math.abs(v);
-		const dp = a < 2 ? 3 : a < 50 ? 1 : 0;
-		return String(+v.toFixed(dp));
-	}
+	const fv = fmtChannel;
 
 	const dslCall = $derived.by(() => {
 		if (!def?.ctor) return '';
