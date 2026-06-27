@@ -6,7 +6,7 @@
 	import { ENCYCLOPEDIA } from '$lib/dsl/encyclopedia';
 	import { CHANNEL_DOCS } from '$lib/dsl/channel-docs';
 	import { ui } from '$lib/state/ui.svelte';
-	import ModelViewer from '$lib/components/ModelViewer.svelte';
+	import GamutPlane from '$lib/components/GamutPlane.svelte';
 
 	const SEED = '#3aa0ff';
 
@@ -87,7 +87,7 @@
 	let selectedId = $state('oklch');
 	let query = $state('');
 	let mobileDetail = $state(false); // mobile: list vs detail view
-	let show3d = $state(false);
+	let showGamut = $state(false); // gamut map collapsed by default
 
 	const def = $derived(getModel(selectedId) as ModelDef);
 	const enc = $derived(ENCYCLOPEDIA[selectedId]);
@@ -114,8 +114,23 @@
 	const resultCount = $derived(groups.reduce((n, g) => n + g.items.length, 0));
 
 	// ── live channel playground ──
+	// One "active color" (pin) persists across navigation, so clicking a related
+	// model or a cross-model readout CONVERTS that color into the new model rather
+	// than resetting it — and the color field lets you paste/type any hex or color.
+	let pin = $state<ColorValue>(hex(SEED));
 	let vals = $state<number[]>([]);
 	let seededFor = '';
+
+	function colorToVals(c: ColorValue): number[] {
+		try {
+			const proj = c.project(def.mode) as unknown as Record<string, number | undefined>;
+			return def.channels.map((ch) => proj[ch.culoriField] ?? (ch.range[0] + ch.range[1]) / 2);
+		} catch {
+			return def.channels.map((ch) => (ch.range[0] + ch.range[1]) / 2);
+		}
+	}
+
+	// Seed the sliders from the active color whenever the model changes.
 	$effect(() => {
 		if (!def?.ctor) {
 			vals = [];
@@ -124,12 +139,7 @@
 		}
 		if (selectedId === seededFor) return;
 		seededFor = selectedId;
-		try {
-			const proj = hex(SEED).project(def.mode) as unknown as Record<string, number | undefined>;
-			vals = def.channels.map((ch) => proj[ch.culoriField] ?? (ch.range[0] + ch.range[1]) / 2);
-		} catch {
-			vals = def.channels.map((ch) => (ch.range[0] + ch.range[1]) / 2);
-		}
+		vals = colorToVals(pin);
 	});
 
 	const current = $derived.by(() => {
@@ -142,6 +152,40 @@
 	});
 	const curHex = $derived(current?.hex ?? null);
 	const inGamut = $derived(current?.inGamut ?? false);
+
+	// Dragging a slider updates the active color so it carries to the next model.
+	function commitPin() {
+		if (current) pin = current;
+	}
+
+	// Color field — paste or type any hex / CSS color to set the playground.
+	let colorInput = $state(SEED);
+	let colorFocused = $state(false);
+	let colorError = $state(false);
+	// Keep the field showing the live color, except while it's being edited.
+	$effect(() => {
+		if (!colorFocused && curHex) colorInput = curHex;
+	});
+	function applyColor() {
+		const raw = colorInput.trim();
+		if (!raw) {
+			colorError = false;
+			return;
+		}
+		let c: ColorValue | null = null;
+		try {
+			c = hex(raw);
+		} catch {
+			c = null;
+		}
+		if (!c) {
+			colorError = raw.length >= 4; // don't flash red on partial typing
+			return;
+		}
+		colorError = false;
+		pin = c;
+		if (def?.ctor) vals = colorToVals(c);
+	}
 
 	// Per-channel gradient track: sample the color produced by sweeping ONLY this
 	// channel across its range while the others hold their current value — so the
@@ -204,16 +248,13 @@
 			.filter((x): x is NonNullable<typeof x> => x !== null);
 	});
 
-	function pickable3d(d: ModelDef) {
-		return (
-			d.backed &&
-			!!d.ctor &&
-			d.channels.length === 3 &&
-			d.family !== 'system' &&
-			d.family !== 'other'
-		);
+	// The 2-D gamut plane works for any constructable model with ≥2 channels.
+	const canPlane = $derived(!!def?.ctor && def.channels.length >= 2 && def.family !== 'system');
+	function pickPlane(xi: number, xVal: number, yi: number, yVal: number) {
+		vals[xi] = xVal;
+		vals[yi] = yVal;
+		commitPin();
 	}
-	const can3d = $derived(!!def && pickable3d(def));
 
 	// ── relationships ──
 	function relName(id: string) {
@@ -439,8 +480,26 @@
 							<div class="play-swatch-row">
 								<span class="play-swatch" style:background={curHex}></span>
 								<div class="play-swatch-info">
-									<code class="play-hex">{curHex}</code>
-									{#if !inGamut}<span class="oog">out of sRGB</span>{/if}
+									<input
+										class="play-hexin"
+										class:err={colorError}
+										bind:value={colorInput}
+										oninput={applyColor}
+										onfocus={() => (colorFocused = true)}
+										onblur={() => {
+											colorFocused = false;
+											colorError = false;
+										}}
+										spellcheck="false"
+										autocomplete="off"
+										autocapitalize="off"
+										aria-label="Paste a hex or CSS color"
+										placeholder="#hex or color"
+										title="Paste or type any hex / CSS color"
+									/>
+									<span class="oog-slot">
+										<span class="oog" class:hide={inGamut}>out of sRGB</span>
+									</span>
 								</div>
 							</div>
 							<div class="play-sliders">
@@ -459,6 +518,7 @@
 											step={(ch.range[1] - ch.range[0]) / 240}
 											style:--grad={gradients[i] ?? 'var(--surface-3)'}
 											bind:value={vals[i]}
+											oninput={commitPin}
 										/>
 									</div>
 								{/each}
@@ -473,7 +533,11 @@
 							<div class="readout-head">This color in other models</div>
 							<div class="readout">
 								{#each readouts as r (r.id)}
-									<button class="readout-row" onclick={() => select(r.id)} title="Open {r.label}">
+									<button
+										class="readout-row"
+										onclick={() => select(r.id)}
+										title="Open {r.label} with this color"
+									>
 										<code class="readout-id">.{r.id}</code>
 										<span class="readout-chans">
 											{#each r.chans as c (c.key)}
@@ -484,25 +548,26 @@
 								{/each}
 							</div>
 							<p class="readout-note">
-								Every value is model-agnostic — the same color, read through each model's lens. In
-								the DSL: <code>c.{readouts[0]?.id ?? 'hsl'}</code>.
+								The same color, read through each model's lens — <strong>click any row</strong> to
+								open that model with this color carried over. In the DSL:
+								<code>c.{readouts[0]?.id ?? 'hsl'}</code>.
 							</p>
 						</div>
 					</div>
 
-					{#if can3d}
+					{#if canPlane}
 						<div class="gamut">
 							<button
 								class="gamut-toggle"
-								onclick={() => (show3d = !show3d)}
-								aria-expanded={show3d}
+								onclick={() => (showGamut = !showGamut)}
+								aria-expanded={showGamut}
 							>
-								<span class="caret" class:open={show3d}>▸</span>
-								{show3d ? 'Hide' : 'Show'} the sRGB gamut as a solid in {def.label} space
+								<span class="caret" class:open={showGamut}>▸</span>
+								{showGamut ? 'Hide gamut map' : 'Show gamut map · click the plane to pick'}
 							</button>
-							{#if show3d}
-								<div class="gamut-box">
-									<ModelViewer pinnedId={def.id} compact seed={curHex ?? SEED} />
+							{#if showGamut}
+								<div class="gamut-body">
+									<GamutPlane {def} {vals} markerColor={curHex ?? '#888'} onpick={pickPlane} />
 								</div>
 							{/if}
 						</div>
@@ -617,10 +682,12 @@
 					</div>
 				{/if}
 				<p class="rel-note">
-					In Chromatics every value is model-agnostic, so <em>any</em> color reaches
-					<em>any</em> of these directly as a view — <code>c.{selectedId}</code>,
-					<code>c.oklch</code>, <code>c.lab</code> … The links above are the color-science lineage; the
-					engine doesn't make you walk it.
+					<strong>Click any</strong> to convert into that model with your current color carried
+					over. In Chromatics every value is model-agnostic, so <em>any</em> color reaches
+					<em>any</em>
+					of these directly as a view — <code>c.{selectedId}</code>, <code>c.oklch</code>,
+					<code>c.lab</code> … The links above are the color-science lineage; the engine doesn't make
+					you walk it.
 				</p>
 			</section>
 
@@ -1048,23 +1115,49 @@
 		border: 1px solid var(--border);
 		flex-shrink: 0;
 	}
-	.play-hex {
+	.play-hexin {
 		font-family: 'JetBrains Mono', ui-monospace, monospace;
 		font-size: 14px;
 		font-weight: 600;
+		color: var(--text);
+		width: 100%;
+		max-width: 170px;
+		padding: 4px 8px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-xs);
+		background: var(--surface-2);
+		outline: none;
+	}
+	.play-hexin:focus {
+		border-color: var(--accent);
+		background: var(--surface);
+	}
+	.play-hexin.err {
+		border-color: var(--warn);
 	}
 	.play-swatch-info {
 		display: flex;
 		flex-direction: column;
-		gap: 3px;
+		gap: 4px;
+		min-width: 0;
+	}
+	.oog-slot {
+		display: flex;
+		align-items: center;
 	}
 	.oog {
 		font-size: 9.5px;
+		line-height: 1.6;
 		color: var(--warn);
 		border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
 		border-radius: 99px;
 		padding: 0 6px;
 		width: fit-content;
+	}
+	/* Always rendered (reserves its space) — just hidden when in gamut, so the
+	   badge appearing/disappearing never reflows the layout. */
+	.oog.hide {
+		visibility: hidden;
 	}
 	.play-sliders {
 		display: grid;
@@ -1252,11 +1345,11 @@
 		color: var(--text);
 	}
 
-	/* 3d gamut */
+	/* 2-D gamut plane */
 	.gamut {
 		margin-top: 14px;
 		border-top: 1px solid var(--border);
-		padding-top: 10px;
+		padding-top: 12px;
 	}
 	.gamut-toggle {
 		display: flex;
@@ -1280,13 +1373,8 @@
 	.caret.open {
 		transform: rotate(90deg);
 	}
-	.gamut-box {
-		height: 340px;
+	.gamut-body {
 		margin-top: 12px;
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		overflow: hidden;
-		background: var(--surface-2);
 	}
 
 	/* channels table */
