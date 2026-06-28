@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Scheme, SchemeEntry } from '$lib/scheme/types';
-	import type { ColorValue } from '$lib/models';
+	import { getModel, getModelByMode, type ColorValue } from '$lib/models';
 	import type { DSLValue } from '$lib/dsl/evaluator.js';
 	import { nearestName } from '$lib/color-names';
 	import { isPreview } from '$lib/dsl/preview';
@@ -35,18 +35,40 @@
 			if (copied === text) copied = null;
 		}, 900);
 	}
-	const convs = (c: ColorValue) => [
-		['HEX', c.hex],
-		['OKLCH', fmtOklch(c)],
-		['RGB', fmtRgb(c)],
-		['HSL', fmtHsl(c)]
-	];
-	// Which listed row is the variable's OWN model — highlighted so the value the
-	// color actually IS stands out (e.g. an HSL var shows its HSL row emphasised).
-	const NATIVE_KEY: Record<string, string> = { oklch: 'OKLCH', rgb: 'RGB', hsl: 'HSL' };
-	function nativeKey(e: SchemeEntry): string | null {
+	// The four most-common readouts, always shown for reference.
+	const COMMON_KEY: Record<string, string> = { oklch: 'OKLCH', rgb: 'RGB', hsl: 'HSL' };
+	/** Which common row (if any) IS the variable's own model. */
+	function commonNativeKey(e: SchemeEntry): string | null {
 		if (e.model === 'hex') return 'HEX';
-		return NATIVE_KEY[e.color.model] ?? null;
+		return COMMON_KEY[e.color.model] ?? null;
+	}
+	const rNum = (v: number) => String(Math.round(v * 1000) / 1000);
+	/** The variable's OWN model rendered from its native channels (e.g. HWB, LAB). */
+	function fmtNative(c: ColorValue): { k: string; v: string } | null {
+		const def = getModel(c.model) ?? getModelByMode(c.model);
+		if (!def || !def.channels.length) return null;
+		const proj = c.project(def.mode) as unknown as Record<string, number | undefined>;
+		const vals = def.channels.map((ch) => rNum((proj[ch.culoriField] ?? 0) * (ch.scale ?? 1)));
+		return { k: def.id.toUpperCase(), v: `${def.id}(${vals.join(' ')})` };
+	}
+	/**
+	 * Rows for a color: the four common readouts, plus — when the variable's own
+	 * model isn't one of them — its native model on top. The native row is flagged
+	 * so it renders emphasised (the value the color actually IS).
+	 */
+	function rowsFor(e: SchemeEntry): { k: string; v: string; native: boolean }[] {
+		const c = e.color;
+		const base = [
+			{ k: 'HEX', v: c.hex },
+			{ k: 'OKLCH', v: fmtOklch(c) },
+			{ k: 'RGB', v: fmtRgb(c) },
+			{ k: 'HSL', v: fmtHsl(c) }
+		];
+		const nk = commonNativeKey(e);
+		if (nk) return base.map((r) => ({ ...r, native: r.k === nk }));
+		const nat = fmtNative(c);
+		const rows = base.map((r) => ({ ...r, native: false }));
+		return nat ? [{ ...nat, native: true }, ...rows] : rows;
 	}
 </script>
 
@@ -66,7 +88,6 @@
 
 		<div class="grid">
 			{#each scheme.entries as e (e.name)}
-				{@const nk = nativeKey(e)}
 				<div class="row">
 					<button
 						class="sw"
@@ -90,15 +111,15 @@
 							{/if}
 						</div>
 						<div class="convs">
-							{#each convs(e.color) as [k, v] (k)}
+							{#each rowsFor(e) as row (row.k)}
 								<button
 									class="conv"
-									class:is-native={k === nk}
-									onclick={() => copy(v)}
-									title={k === nk ? `${k} — this color's model` : `copy ${k}`}
+									class:is-native={row.native}
+									onclick={() => copy(row.v)}
+									title={row.native ? `${row.k} — this color's model` : `copy ${row.k}`}
 								>
-									<span class="conv-k">{k}</span>
-									<span class="conv-v mono">{copied === v ? 'copied!' : v}</span>
+									<span class="conv-k">{row.k}</span>
+									<span class="conv-v mono">{copied === row.v ? 'copied!' : row.v}</span>
 								</button>
 							{/each}
 						</div>
