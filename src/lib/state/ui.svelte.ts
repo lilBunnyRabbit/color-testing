@@ -1,4 +1,6 @@
 /** UI/chrome state: theme, the resizable/collapsible editor, and the active tab. */
+import type { SwatchMode } from '$lib/dsl/swatch-deco';
+
 export type Theme = 'light' | 'dark';
 export type Tab = 'inspector' | 'studio' | 'matrix' | 'validate' | 'preview' | 'explore' | 'export';
 
@@ -8,6 +10,8 @@ export class UiStore {
 	editorWidth = $state(46);
 	editorCollapsed = $state(false);
 	tab = $state<Tab>('inspector');
+	/** How colour variables are marked in the editor. */
+	swatchMode = $state<SwatchMode>('square');
 
 	/**
 	 * Viewport gate for the desktop/mobile shell split. Both stay false during

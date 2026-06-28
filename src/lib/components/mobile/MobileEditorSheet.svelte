@@ -7,7 +7,10 @@
 	import Sheet from './Sheet.svelte';
 	import Editor from '$lib/Editor.svelte';
 	import { app } from '$lib/state/app.svelte';
-	import { completion, hover } from '$lib/dsl/editor-bindings';
+	import { ui } from '$lib/state/ui.svelte';
+	import { completion, hover, makeSwatches } from '$lib/dsl/editor-bindings';
+
+	const swatch = $derived(makeSwatches(ui.swatchMode));
 
 	let { open = false, onclose }: { open?: boolean; onclose: () => void } = $props();
 </script>
@@ -20,7 +23,7 @@
 	{/snippet}
 
 	<div class="m-editor-host">
-		<Editor bind:value={app.source} completionSource={completion} {hover} />
+		<Editor bind:value={app.source} completionSource={completion} {hover} {swatch} />
 	</div>
 	{#if app.result.errors.length > 0}
 		<div class="m-errorbar scroll">
