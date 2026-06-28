@@ -31,7 +31,15 @@ describe('role mapping on brand-dark', () => {
 
 	test('cssVars emits every theme variable', () => {
 		const vars = cssVars(s, roles, DEFAULT_OPACITIES);
-		for (const v of ['--bg', '--fg', '--primary', '--primary-fg', '--surface', '--border', '--op-muted']) {
+		for (const v of [
+			'--bg',
+			'--fg',
+			'--primary',
+			'--primary-fg',
+			'--surface',
+			'--border',
+			'--op-muted'
+		]) {
 			expect(vars).toContain(v);
 		}
 	});

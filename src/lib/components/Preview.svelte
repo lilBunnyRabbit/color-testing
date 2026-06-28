@@ -10,7 +10,15 @@
 	import DataViz from './demos/DataViz.svelte';
 	import Sheet from './mobile/Sheet.svelte';
 
-	const demos = ['Landing', 'Dashboard', 'Blog', 'Brand mark', 'Style sheet', 'Collateral', 'Data viz'];
+	const demos = [
+		'Landing',
+		'Dashboard',
+		'Blog',
+		'Brand mark',
+		'Style sheet',
+		'Collateral',
+		'Data viz'
+	];
 	let demoIndex = $state(0);
 	// Desktop shows the roles panel inline by default; on a phone it's a sheet,
 	// closed until the user taps "Roles & audit".
@@ -31,8 +39,9 @@
 	});
 	const vars = $derived(cssVars(simScheme, app.effectiveRoles, app.opacities));
 	const fails = $derived(
-		app.audit.filter((a) => (a.large ? wcagLevels(a.ratio).large : wcagLevels(a.ratio).normal) === 'Fail')
-			.length
+		app.audit.filter(
+			(a) => (a.large ? wcagLevels(a.ratio).large : wcagLevels(a.ratio).normal) === 'Fail'
+		).length
 	);
 
 	const roleRows: [keyof Roles, string, boolean][] = [
@@ -61,11 +70,14 @@
 	<div class="pv-toolbar">
 		<div class="seg">
 			{#each demos as d, i (d)}
-				<button class="seg-item {demoIndex === i ? 'active' : ''}" onclick={() => (demoIndex = i)}>{d}</button>
+				<button class="seg-item {demoIndex === i ? 'active' : ''}" onclick={() => (demoIndex = i)}
+					>{d}</button
+				>
 			{/each}
 		</div>
 		<select class="select" bind:value={app.visionSim}>
-			{#each visionSimulations as sim (sim.value)}<option value={sim.value}>{sim.label}</option>{/each}
+			{#each visionSimulations as sim (sim.value)}<option value={sim.value}>{sim.label}</option
+				>{/each}
 		</select>
 		<div class="pv-spacer"></div>
 		<span class="pv-fails" class:bad={fails > 0}>
@@ -146,13 +158,18 @@
 						<nav class="d-nav">
 							<div class="d-nav-inner">
 								<span class="d-logo">Acme</span>
-								<div class="d-nav-links"><a href="#f">Features</a><a href="#p">Pricing</a><a href="#a">About</a></div>
+								<div class="d-nav-links">
+									<a href="#f">Features</a><a href="#p">Pricing</a><a href="#a">About</a>
+								</div>
 								<button class="d-btn d-btn-primary">Get Started</button>
 							</div>
 						</nav>
 						<section class="d-hero">
 							<h1 class="d-hero-title">Build better products,<br />faster than ever</h1>
-							<p class="d-hero-sub">The modern platform for teams who ship. Streamline your workflow, collaborate in real-time, and deliver with confidence.</p>
+							<p class="d-hero-sub">
+								The modern platform for teams who ship. Streamline your workflow, collaborate in
+								real-time, and deliver with confidence.
+							</p>
 							<div class="d-hero-actions">
 								<button class="d-btn d-btn-primary d-btn-lg">Start Free Trial</button>
 								<button class="d-btn d-btn-outline d-btn-lg">Watch Demo</button>
@@ -163,28 +180,62 @@
 							<p class="d-section-sub">Powerful features to help your team succeed</p>
 							<div class="d-cards-3">
 								<div class="d-card">
-									<div class="d-card-icon" style="background: var(--primary); color: var(--primary-fg)">&#9672;</div>
+									<div
+										class="d-card-icon"
+										style="background: var(--primary); color: var(--primary-fg)"
+									>
+										&#9672;
+									</div>
 									<h3 class="d-card-title">Lightning Fast</h3>
-									<p class="d-card-text">Optimized for speed at every level. Your team won't wait for tools to catch up.</p>
+									<p class="d-card-text">
+										Optimized for speed at every level. Your team won't wait for tools to catch up.
+									</p>
 								</div>
 								<div class="d-card">
-									<div class="d-card-icon" style="background: var(--secondary); color: var(--secondary-fg)">&#9881;</div>
+									<div
+										class="d-card-icon"
+										style="background: var(--secondary); color: var(--secondary-fg)"
+									>
+										&#9881;
+									</div>
 									<h3 class="d-card-title">Fully Configurable</h3>
-									<p class="d-card-text">Adapt the platform to your workflow. Custom fields, automations, and integrations.</p>
+									<p class="d-card-text">
+										Adapt the platform to your workflow. Custom fields, automations, and
+										integrations.
+									</p>
 								</div>
 								<div class="d-card">
-									<div class="d-card-icon" style="background: var(--tertiary); color: var(--tertiary-fg)">&#9734;</div>
+									<div
+										class="d-card-icon"
+										style="background: var(--tertiary); color: var(--tertiary-fg)"
+									>
+										&#9734;
+									</div>
 									<h3 class="d-card-title">Team Collaboration</h3>
-									<p class="d-card-text">Real-time editing, comments, and notifications keep everyone aligned.</p>
+									<p class="d-card-text">
+										Real-time editing, comments, and notifications keep everyone aligned.
+									</p>
 								</div>
 							</div>
 						</section>
 						<section class="d-stats-banner">
 							<div class="d-stats-grid">
-								<div class="d-stat"><div class="d-stat-num">10K+</div><div class="d-stat-label">Teams</div></div>
-								<div class="d-stat"><div class="d-stat-num">2M</div><div class="d-stat-label">Projects</div></div>
-								<div class="d-stat"><div class="d-stat-num">99.9%</div><div class="d-stat-label">Uptime</div></div>
-								<div class="d-stat"><div class="d-stat-num">24/7</div><div class="d-stat-label">Support</div></div>
+								<div class="d-stat">
+									<div class="d-stat-num">10K+</div>
+									<div class="d-stat-label">Teams</div>
+								</div>
+								<div class="d-stat">
+									<div class="d-stat-num">2M</div>
+									<div class="d-stat-label">Projects</div>
+								</div>
+								<div class="d-stat">
+									<div class="d-stat-num">99.9%</div>
+									<div class="d-stat-label">Uptime</div>
+								</div>
+								<div class="d-stat">
+									<div class="d-stat-num">24/7</div>
+									<div class="d-stat-label">Support</div>
+								</div>
 							</div>
 						</section>
 						<section class="d-cta-banner">
@@ -198,11 +249,21 @@
 							<aside class="dash-sidebar">
 								<div class="d-logo" style="padding: 16px">App</div>
 								<nav class="dash-nav">
-									<a href="#d" class="dash-nav-item active"><span class="dash-nav-icon">&#9632;</span> Dashboard</a>
-									<a href="#pr" class="dash-nav-item"><span class="dash-nav-icon">&#9776;</span> Projects</a>
-									<a href="#t" class="dash-nav-item"><span class="dash-nav-icon">&#9745;</span> Tasks</a>
-									<a href="#m" class="dash-nav-item"><span class="dash-nav-icon">&#9993;</span> Messages</a>
-									<a href="#s" class="dash-nav-item"><span class="dash-nav-icon">&#9881;</span> Settings</a>
+									<a href="#d" class="dash-nav-item active"
+										><span class="dash-nav-icon">&#9632;</span> Dashboard</a
+									>
+									<a href="#pr" class="dash-nav-item"
+										><span class="dash-nav-icon">&#9776;</span> Projects</a
+									>
+									<a href="#t" class="dash-nav-item"
+										><span class="dash-nav-icon">&#9745;</span> Tasks</a
+									>
+									<a href="#m" class="dash-nav-item"
+										><span class="dash-nav-icon">&#9993;</span> Messages</a
+									>
+									<a href="#s" class="dash-nav-item"
+										><span class="dash-nav-icon">&#9881;</span> Settings</a
+									>
 								</nav>
 							</aside>
 							<div class="dash-main">
@@ -210,26 +271,81 @@
 									<h1 class="dash-page-title">Dashboard</h1>
 									<div class="dash-topbar-right">
 										<button class="d-btn d-btn-outline" style="font-size:13px">&#9993; 3</button>
-										<div class="d-avatar d-avatar-sm" style="background: var(--primary); color: var(--primary-fg)">U</div>
+										<div
+											class="d-avatar d-avatar-sm"
+											style="background: var(--primary); color: var(--primary-fg)"
+										>
+											U
+										</div>
 									</div>
 								</header>
 								<div class="dash-content">
 									<div class="d-cards-4">
-										<div class="d-card dash-stat-card"><div class="d-card-text">Revenue</div><div class="dash-stat-value">$12,480</div><div class="dash-stat-change" style="color: var(--primary)">+12.5%</div></div>
-										<div class="d-card dash-stat-card"><div class="d-card-text">Users</div><div class="dash-stat-value">1,845</div><div class="dash-stat-change" style="color: var(--secondary)">+8.2%</div></div>
-										<div class="d-card dash-stat-card"><div class="d-card-text">Orders</div><div class="dash-stat-value">284</div><div class="dash-stat-change" style="color: var(--tertiary)">+23.1%</div></div>
-										<div class="d-card dash-stat-card"><div class="d-card-text">Conversion</div><div class="dash-stat-value">3.2%</div><div class="dash-stat-change" style="color: var(--accent)">+0.4%</div></div>
+										<div class="d-card dash-stat-card">
+											<div class="d-card-text">Revenue</div>
+											<div class="dash-stat-value">$12,480</div>
+											<div class="dash-stat-change" style="color: var(--primary)">+12.5%</div>
+										</div>
+										<div class="d-card dash-stat-card">
+											<div class="d-card-text">Users</div>
+											<div class="dash-stat-value">1,845</div>
+											<div class="dash-stat-change" style="color: var(--secondary)">+8.2%</div>
+										</div>
+										<div class="d-card dash-stat-card">
+											<div class="d-card-text">Orders</div>
+											<div class="dash-stat-value">284</div>
+											<div class="dash-stat-change" style="color: var(--tertiary)">+23.1%</div>
+										</div>
+										<div class="d-card dash-stat-card">
+											<div class="d-card-text">Conversion</div>
+											<div class="dash-stat-value">3.2%</div>
+											<div class="dash-stat-change" style="color: var(--accent)">+0.4%</div>
+										</div>
 									</div>
 									<div class="d-cards-2" style="margin-top: 20px">
 										<div class="d-card">
-											<div class="dash-card-header"><h3 class="d-card-title">Recent Orders</h3><a href="#v" class="dash-view-all">View all</a></div>
+											<div class="dash-card-header">
+												<h3 class="d-card-title">Recent Orders</h3>
+												<a href="#v" class="dash-view-all">View all</a>
+											</div>
 											<table class="dash-table">
-												<thead><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+												<thead
+													><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Status</th></tr
+													></thead
+												>
 												<tbody>
-													<tr><td>#1234</td><td>Alice Johnson</td><td>$120.00</td><td><span class="d-badge" style="background: var(--primary); color: var(--primary-fg)">Active</span></td></tr>
-													<tr><td>#1233</td><td>Bob Williams</td><td>$85.50</td><td><span class="d-badge" style="background: var(--secondary); color: var(--secondary-fg)">Shipped</span></td></tr>
-													<tr><td>#1232</td><td>Carol Davis</td><td>$210.00</td><td><span class="d-badge" style="background: var(--primary); color: var(--primary-fg)">Active</span></td></tr>
-													<tr><td>#1231</td><td>Dan Miller</td><td>$45.00</td><td><span class="d-badge d-badge-muted">Complete</span></td></tr>
+													<tr
+														><td>#1234</td><td>Alice Johnson</td><td>$120.00</td><td
+															><span
+																class="d-badge"
+																style="background: var(--primary); color: var(--primary-fg)"
+																>Active</span
+															></td
+														></tr
+													>
+													<tr
+														><td>#1233</td><td>Bob Williams</td><td>$85.50</td><td
+															><span
+																class="d-badge"
+																style="background: var(--secondary); color: var(--secondary-fg)"
+																>Shipped</span
+															></td
+														></tr
+													>
+													<tr
+														><td>#1232</td><td>Carol Davis</td><td>$210.00</td><td
+															><span
+																class="d-badge"
+																style="background: var(--primary); color: var(--primary-fg)"
+																>Active</span
+															></td
+														></tr
+													>
+													<tr
+														><td>#1231</td><td>Dan Miller</td><td>$45.00</td><td
+															><span class="d-badge d-badge-muted">Complete</span></td
+														></tr
+													>
 												</tbody>
 											</table>
 										</div>
@@ -238,8 +354,19 @@
 											<div class="dash-chart">
 												{#each [65, 45, 80, 55, 70, 90, 60, 75, 85, 50, 70, 88] as val, i (i)}
 													<div class="dash-bar-col">
-														<div class="dash-bar" style="height: {val}%; background: var({i % 3 === 0 ? '--primary' : i % 3 === 1 ? '--secondary' : '--tertiary'})"></div>
-														<span class="dash-bar-label">{['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][i]}</span>
+														<div
+															class="dash-bar"
+															style="height: {val}%; background: var({i % 3 === 0
+																? '--primary'
+																: i % 3 === 1
+																	? '--secondary'
+																	: '--tertiary'})"
+														></div>
+														<span class="dash-bar-label"
+															>{['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][
+																i
+															]}</span
+														>
 													</div>
 												{/each}
 											</div>
@@ -253,7 +380,9 @@
 						<nav class="d-nav">
 							<div class="d-nav-inner">
 								<span class="d-logo">The Journal</span>
-								<div class="d-nav-links"><a href="#h">Home</a><a href="#ca">Categories</a><a href="#ab">About</a></div>
+								<div class="d-nav-links">
+									<a href="#h">Home</a><a href="#ca">Categories</a><a href="#ab">About</a>
+								</div>
 								<button class="d-btn d-btn-outline" style="font-size: 13px">Subscribe</button>
 							</div>
 						</nav>
@@ -262,26 +391,58 @@
 								<div class="blog-category" style="color: var(--primary)">Design</div>
 								<h1 class="blog-title">The Art of Color Theory in Modern Interface Design</h1>
 								<div class="blog-meta">
-									<div class="d-avatar d-avatar-sm" style="background: var(--primary); color: var(--primary-fg)">MK</div>
+									<div
+										class="d-avatar d-avatar-sm"
+										style="background: var(--primary); color: var(--primary-fg)"
+									>
+										MK
+									</div>
 									<span>Maya Kim</span>
-									<span style="color: var(--fg); opacity: var(--op-muted)">&middot; Jan 15, 2025 &middot; 8 min read</span>
+									<span style="color: var(--fg); opacity: var(--op-muted)"
+										>&middot; Jan 15, 2025 &middot; 8 min read</span
+									>
 								</div>
 								<div class="blog-hero-img" style="background: var(--primary); opacity: 0.15"></div>
 								<div class="blog-body">
-									<p>Color is one of the most powerful tools in a designer's arsenal. It guides attention, communicates meaning, and shapes the emotional experience of an interface.</p>
+									<p>
+										Color is one of the most powerful tools in a designer's arsenal. It guides
+										attention, communicates meaning, and shapes the emotional experience of an
+										interface.
+									</p>
 									<h2>Understanding OKLCH</h2>
-									<p>The OKLCH color space provides perceptually uniform lightness, making it possible to create palettes where perceived contrast is consistent across hues.</p>
-									<blockquote class="blog-quote">"Good color isn't about picking pretty hues. It's about building a system where every color has a purpose."</blockquote>
-									<p>Start with your background and foreground. These two colors define the foundation of your visual hierarchy.</p>
+									<p>
+										The OKLCH color space provides perceptually uniform lightness, making it
+										possible to create palettes where perceived contrast is consistent across hues.
+									</p>
+									<blockquote class="blog-quote">
+										"Good color isn't about picking pretty hues. It's about building a system where
+										every color has a purpose."
+									</blockquote>
+									<p>
+										Start with your background and foreground. These two colors define the
+										foundation of your visual hierarchy.
+									</p>
 									<div class="blog-callout">
 										<div class="blog-callout-title">Key Takeaway</div>
-										<p>Always test your color combinations in context. A color that looks great in isolation may fail when paired with your background.</p>
+										<p>
+											Always test your color combinations in context. A color that looks great in
+											isolation may fail when paired with your background.
+										</p>
 									</div>
 								</div>
 								<div class="blog-tags">
-									<span class="d-badge" style="background: var(--primary); color: var(--primary-fg)">Design</span>
-									<span class="d-badge" style="background: var(--secondary); color: var(--secondary-fg)">Color Theory</span>
-									<span class="d-badge" style="background: var(--tertiary); color: var(--tertiary-fg)">UI</span>
+									<span class="d-badge" style="background: var(--primary); color: var(--primary-fg)"
+										>Design</span
+									>
+									<span
+										class="d-badge"
+										style="background: var(--secondary); color: var(--secondary-fg)"
+										>Color Theory</span
+									>
+									<span
+										class="d-badge"
+										style="background: var(--tertiary); color: var(--tertiary-fg)">UI</span
+									>
 									<span class="d-badge d-badge-muted">OKLCH</span>
 								</div>
 							</article>
@@ -289,9 +450,24 @@
 								<div class="d-card">
 									<h3 class="d-card-title">Categories</h3>
 									<div class="blog-cat-list">
-										<a href="#d" class="blog-cat-item"><span>Design</span><span class="blog-cat-count" style="background: var(--primary); color: var(--primary-fg)">12</span></a>
-										<a href="#e" class="blog-cat-item"><span>Engineering</span><span class="blog-cat-count" style="background: var(--secondary); color: var(--secondary-fg)">8</span></a>
-										<a href="#p" class="blog-cat-item"><span>Product</span><span class="blog-cat-count" style="background: var(--tertiary); color: var(--tertiary-fg)">5</span></a>
+										<a href="#d" class="blog-cat-item"
+											><span>Design</span><span
+												class="blog-cat-count"
+												style="background: var(--primary); color: var(--primary-fg)">12</span
+											></a
+										>
+										<a href="#e" class="blog-cat-item"
+											><span>Engineering</span><span
+												class="blog-cat-count"
+												style="background: var(--secondary); color: var(--secondary-fg)">8</span
+											></a
+										>
+										<a href="#p" class="blog-cat-item"
+											><span>Product</span><span
+												class="blog-cat-count"
+												style="background: var(--tertiary); color: var(--tertiary-fg)">5</span
+											></a
+										>
 									</div>
 								</div>
 							</aside>

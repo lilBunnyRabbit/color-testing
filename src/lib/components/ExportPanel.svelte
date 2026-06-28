@@ -1,8 +1,16 @@
 <script lang="ts">
 	import { app } from '$lib/state/app.svelte';
 	import { exportScheme, toSwatchSVG, EXPORT_FORMATS, type ExportFormat } from '$lib/export';
+	import { toStyleguideCss, toStyleguideHtml, type StyleguideInput } from '$lib/export/styleguide';
 
-	let format = $state<ExportFormat>('css');
+	type Fmt = ExportFormat | 'sg-css' | 'sg-html';
+	const FORMATS: { id: Fmt; label: string; lang: string }[] = [
+		...EXPORT_FORMATS,
+		{ id: 'sg-css', label: 'Styleguide CSS', lang: 'css' },
+		{ id: 'sg-html', label: 'Styleguide page', lang: 'html' }
+	];
+
+	let format = $state<Fmt>('css');
 	let swatchBg = $state('#fbfcfd');
 	const swatchBgOptions = $derived([
 		{ label: 'Light', value: '#fbfcfd' },
@@ -10,19 +18,32 @@
 		{ label: 'Black', value: '#0b0b0c' },
 		...app.scheme.entries.map((e) => ({ label: e.name, value: e.color.hex }))
 	]);
+	const sgInput: StyleguideInput = $derived({
+		scheme: app.scheme,
+		tokens: app.tokens,
+		roles: app.effectiveRoles,
+		opacities: app.opacities,
+		components: app.components
+	});
 	const output = $derived(
 		format === 'swatch'
 			? toSwatchSVG(app.scheme, { background: swatchBg })
-			: exportScheme(app.scheme, format)
+			: format === 'sg-css'
+				? toStyleguideCss(sgInput)
+				: format === 'sg-html'
+					? toStyleguideHtml(sgInput)
+					: exportScheme(app.scheme, format)
 	);
 	let copied = $state(false);
 
-	const HINTS: Record<ExportFormat, string> = {
+	const HINTS: Record<Fmt, string> = {
 		css: ':root custom properties — drop into any stylesheet.',
 		tokens: 'W3C Design Token (DTCG) JSON for Figma / Style Dictionary.',
 		tailwind: 'Tailwind v4 @theme block + a legacy config colors object.',
 		markdown: 'A documentation table — name · hex · oklch · comment.',
-		swatch: 'A shareable swatch sheet — preview below, download as SVG or PNG.'
+		swatch: 'A shareable swatch sheet — preview below, download as SVG or PNG.',
+		'sg-css': 'Color + token vars and component utility classes (.btn, .card…).',
+		'sg-html': 'A self-contained styleguide page — download and host anywhere.'
 	};
 
 	function copy() {
@@ -41,6 +62,9 @@
 	}
 	function downloadSvg() {
 		download('palette.svg', new Blob([output], { type: 'image/svg+xml' }));
+	}
+	function downloadHtml() {
+		download('styleguide.html', new Blob([output], { type: 'text/html' }));
 	}
 	function downloadPng() {
 		const blob = new Blob([output], { type: 'image/svg+xml' });
@@ -68,7 +92,7 @@
 <div class="export-root">
 	<div class="ex-bar">
 		<div class="seg">
-			{#each EXPORT_FORMATS as f (f.id)}
+			{#each FORMATS as f (f.id)}
 				<button class="seg-item {format === f.id ? 'active' : ''}" onclick={() => (format = f.id)}>
 					{f.label}
 				</button>
@@ -86,11 +110,17 @@
 					<label class="ex-bg-field">
 						<span>Background</span>
 						<select class="select" bind:value={swatchBg}>
-							{#each swatchBgOptions as o (o.value + o.label)}<option value={o.value}>{o.label}</option>{/each}
+							{#each swatchBgOptions as o (o.value + o.label)}<option value={o.value}
+									>{o.label}</option
+								>{/each}
 						</select>
 					</label>
 					<button class="btn" onclick={downloadSvg}>Download SVG</button>
 					<button class="btn" onclick={downloadPng}>Download PNG</button>
+				</span>
+			{:else if format === 'sg-html'}
+				<span class="ex-actions">
+					<button class="btn" onclick={downloadHtml}>Download HTML</button>
 				</span>
 			{/if}
 		</div>
@@ -103,10 +133,31 @@
 			<div class="ex-card">
 				<button class="ex-copy" onclick={copy}>
 					{#if copied}
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+						<svg
+							width="13"
+							height="13"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg
+						>
 						Copied
 					{:else}
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+						<svg
+							width="13"
+							height="13"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><rect x="9" y="9" width="13" height="13" rx="2" /><path
+								d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+							/></svg
+						>
 						Copy
 					{/if}
 				</button>

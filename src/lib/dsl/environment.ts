@@ -8,6 +8,9 @@ import { getModel, hex, ColorValue, type DSLValue } from '../models/index.js';
 import { num, color, oklchMix } from '../models/util.js';
 import { wcagContrast, differenceCiede2000 } from '../models/registry.js';
 import { preview } from './preview.js';
+import { scale, tokenFn } from './tokens.js';
+import { component } from './components.js';
+import { themeFn } from './theme.js';
 
 export function createEnvironment(): Map<string, DSLValue> {
 	const env = new Map<string, DSLValue>();
@@ -37,6 +40,12 @@ export function createEnvironment(): Map<string, DSLValue> {
 
 	// Preview namespace — preview.gradient(a, b), preview.pair(fg, bg), …
 	env.set('preview', preview as unknown as DSLValue);
+
+	// Design-system namespaces — scale.text(16), token('font', …), component.button({…})
+	env.set('scale', scale as unknown as DSLValue);
+	env.set('token', tokenFn);
+	env.set('component', component as unknown as DSLValue);
+	env.set('theme', themeFn);
 
 	// Math
 	env.set('abs', (n: DSLValue) => Math.abs(num(n)));
