@@ -9,6 +9,7 @@ import type { Scheme } from '$lib/scheme/types';
 import type { VisionSimulation } from '$lib/analysis/cvd';
 import {
 	emptyRoles,
+	resolveRoles,
 	cssVars as buildVars,
 	auditPairs as buildAudit,
 	DEFAULT_OPACITIES,
@@ -22,6 +23,7 @@ export class AppStore {
 	visionSim = $state<VisionSimulation>('none');
 	fgOpacity = $state(100);
 
+	/** Sparse user overrides; `''` per role means "auto". */
 	roles = $state<Roles>(emptyRoles());
 	opacities = $state<Opacities>({ ...DEFAULT_OPACITIES });
 
@@ -29,8 +31,11 @@ export class AppStore {
 	scheme: Scheme = $derived(schemeFromEvalResult(this.result, this.source));
 	fgAlpha = $derived(this.fgOpacity / 100);
 
-	themeVars: string = $derived(buildVars(this.scheme, this.roles, this.opacities));
-	audit: AuditPair[] = $derived(buildAudit(this.scheme, this.roles, this.opacities));
+	/** Overrides collapsed onto the auto heuristic — dangling names self-heal. */
+	effectiveRoles: Roles = $derived(resolveRoles(this.scheme.entries, this.roles));
+
+	themeVars: string = $derived(buildVars(this.scheme, this.effectiveRoles, this.opacities));
+	audit: AuditPair[] = $derived(buildAudit(this.scheme, this.effectiveRoles, this.opacities));
 }
 
 export const app = new AppStore();

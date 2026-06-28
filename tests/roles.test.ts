@@ -1,7 +1,15 @@
 import { test, expect, describe } from 'bun:test';
 import { evaluate } from '../src/lib/dsl/evaluator';
 import { schemeFromEvalResult } from '../src/lib/scheme/adapter';
-import { autoAssign, cssVars, auditPairs, DEFAULT_OPACITIES } from '../src/lib/scheme/roles';
+import {
+	autoAssign,
+	resolveRoles,
+	cssVars,
+	auditPairs,
+	emptyRoles,
+	NONE_ROLE,
+	DEFAULT_OPACITIES
+} from '../src/lib/scheme/roles';
 import { source as brandDark } from '../src/routes/examples/brand-dark';
 import { wcagLevels } from '../src/lib/analysis/wcag';
 
@@ -14,11 +22,11 @@ describe('role mapping on brand-dark', () => {
 	const roles = autoAssign(s.entries);
 
 	test('auto-assigns bg/fg/primary by name', () => {
-		expect(s.entries[roles.bg].name).toBe('background');
-		expect(s.entries[roles.fg].name).toBe('foreground');
-		expect(s.entries[roles.primary].name).toBe('primary');
-		expect(s.entries[roles.secondary].name).toBe('secondary');
-		expect(s.entries[roles.accent].name).toBe('accent');
+		expect(roles.bg).toBe('background');
+		expect(roles.fg).toBe('foreground');
+		expect(roles.primary).toBe('primary');
+		expect(roles.secondary).toBe('secondary');
+		expect(roles.accent).toBe('accent');
 	});
 
 	test('cssVars emits every theme variable', () => {
@@ -48,5 +56,30 @@ describe('cssVars guards', () => {
 	test('returns empty string when bg/fg/primary are missing', () => {
 		const s = scheme('x = 5');
 		expect(cssVars(s, autoAssign(s.entries), DEFAULT_OPACITIES)).toBe('');
+	});
+});
+
+describe('resolveRoles (the by-name fix)', () => {
+	const s = scheme(brandDark);
+
+	test('empty overrides fall back to the auto heuristic', () => {
+		const r = resolveRoles(s.entries, emptyRoles());
+		expect(r.bg).toBe('background');
+		expect(r.primary).toBe('primary');
+	});
+
+	test('a valid manual override survives (no clobber)', () => {
+		const overrides = { ...emptyRoles(), primary: 'accent' };
+		expect(resolveRoles(s.entries, overrides).primary).toBe('accent');
+	});
+
+	test('a dangling name self-heals to auto', () => {
+		const overrides = { ...emptyRoles(), primary: 'nope_renamed' };
+		expect(resolveRoles(s.entries, overrides).primary).toBe('primary');
+	});
+
+	test('NONE_ROLE forces an optional role off', () => {
+		const overrides = { ...emptyRoles(), accent: NONE_ROLE };
+		expect(resolveRoles(s.entries, overrides).accent).toBe('');
 	});
 });
