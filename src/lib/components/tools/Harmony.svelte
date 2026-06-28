@@ -13,22 +13,49 @@
 	type Scheme = { label: string; offsets: { n: string; d: number }[] };
 	const SCHEMES: Record<string, Scheme> = {
 		complementary: { label: 'Complementary', offsets: [{ n: 'complement', d: 180 }] },
-		analogous: { label: 'Analogous', offsets: [{ n: 'analog_1', d: -30 }, { n: 'analog_2', d: 30 }] },
-		triadic: { label: 'Triadic', offsets: [{ n: 'triad_1', d: 120 }, { n: 'triad_2', d: 240 }] },
-		split: { label: 'Split complementary', offsets: [{ n: 'split_1', d: 150 }, { n: 'split_2', d: 210 }] },
+		analogous: {
+			label: 'Analogous',
+			offsets: [
+				{ n: 'analog_1', d: -30 },
+				{ n: 'analog_2', d: 30 }
+			]
+		},
+		triadic: {
+			label: 'Triadic',
+			offsets: [
+				{ n: 'triad_1', d: 120 },
+				{ n: 'triad_2', d: 240 }
+			]
+		},
+		split: {
+			label: 'Split complementary',
+			offsets: [
+				{ n: 'split_1', d: 150 },
+				{ n: 'split_2', d: 210 }
+			]
+		},
 		tetradic: {
 			label: 'Tetradic',
-			offsets: [{ n: 'tetrad_1', d: 90 }, { n: 'tetrad_2', d: 180 }, { n: 'tetrad_3', d: 270 }]
+			offsets: [
+				{ n: 'tetrad_1', d: 90 },
+				{ n: 'tetrad_2', d: 180 },
+				{ n: 'tetrad_3', d: 270 }
+			]
 		}
 	};
 	let scheme = $state<keyof typeof SCHEMES>('complementary');
 
 	function derive(c: ColorValue, deg: number): ColorValue {
-		return OKLCH(c.channel('ok_l'), c.channel('ok_c'), wrapHue(c.channel('ok_h') + deg)).gamutMapped;
+		return OKLCH(c.channel('ok_l'), c.channel('ok_c'), wrapHue(c.channel('ok_h') + deg))
+			.gamutMapped;
 	}
 	const results = $derived.by(() => {
 		if (!base) return [];
-		return SCHEMES[scheme].offsets.map((o) => ({ name: o.n, deg: o.d, color: derive(base.color, o.d) }));
+		return SCHEMES[scheme].offsets.map((o) => ({
+			name: o.n,
+			deg: o.d,
+			color: derive(base.color, o.d)
+		}));
 	});
 
 	function apply() {
@@ -57,10 +84,13 @@
 			<label class="field">
 				<span>Scheme</span>
 				<select class="select" bind:value={scheme}>
-					{#each Object.entries(SCHEMES) as [id, s] (id)}<option value={id}>{s.label}</option>{/each}
+					{#each Object.entries(SCHEMES) as [id, s] (id)}<option value={id}>{s.label}</option
+						>{/each}
 				</select>
 			</label>
-			<button class="btn btn-accent" onclick={apply}>Insert {results.length} color{results.length > 1 ? 's' : ''}</button>
+			<button class="btn btn-accent" onclick={apply}
+				>Insert {results.length} color{results.length > 1 ? 's' : ''}</button
+			>
 		</div>
 
 		<div class="wheel-row">
@@ -68,13 +98,41 @@
 				<circle cx="0" cy="0" r="100" fill="none" stroke="var(--border)" />
 				{#each [base.color.channel('ok_h')] as bh (bh)}
 					{@const a = ((bh - 90) * Math.PI) / 180}
-					<line x1="0" y1="0" x2={92 * Math.cos(a)} y2={92 * Math.sin(a)} stroke="var(--border-strong)" stroke-width="1" />
-					<circle cx={92 * Math.cos(a)} cy={92 * Math.sin(a)} r="11" fill={base.color.hex} stroke="var(--text)" stroke-width="1.5" />
+					<line
+						x1="0"
+						y1="0"
+						x2={92 * Math.cos(a)}
+						y2={92 * Math.sin(a)}
+						stroke="var(--border-strong)"
+						stroke-width="1"
+					/>
+					<circle
+						cx={92 * Math.cos(a)}
+						cy={92 * Math.sin(a)}
+						r="11"
+						fill={base.color.hex}
+						stroke="var(--text)"
+						stroke-width="1.5"
+					/>
 				{/each}
 				{#each results as r (r.name)}
 					{@const a = ((r.color.channel('ok_h') - 90) * Math.PI) / 180}
-					<line x1="0" y1="0" x2={92 * Math.cos(a)} y2={92 * Math.sin(a)} stroke="var(--border)" stroke-width="1" />
-					<circle cx={92 * Math.cos(a)} cy={92 * Math.sin(a)} r="9" fill={r.color.hex} stroke="var(--surface)" stroke-width="1.5" />
+					<line
+						x1="0"
+						y1="0"
+						x2={92 * Math.cos(a)}
+						y2={92 * Math.sin(a)}
+						stroke="var(--border)"
+						stroke-width="1"
+					/>
+					<circle
+						cx={92 * Math.cos(a)}
+						cy={92 * Math.sin(a)}
+						r="9"
+						fill={r.color.hex}
+						stroke="var(--surface)"
+						stroke-width="1.5"
+					/>
 				{/each}
 			</svg>
 			<div class="swatches">

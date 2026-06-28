@@ -54,7 +54,7 @@ export const ENCYCLOPEDIA: Record<string, EncyclopediaEntry> = {
 			'Gamut-aware color adjustment for sRGB, P3, and Rec.2020'
 		],
 		benefitsHere: [
-			'OKLCH is the canonical storage space in Chromatics, so reaching it through the c.oklch view or the OKLCH(l, c, h) constructor is lossless and the natural home for color math.',
+			'OKLCH is the perceptual workhorse for color math in Chromatics — a color built with OKLCH(l, c, h) stays OKLCH, and any other color reaches it via the c.oklch view; lightness/chroma/hue tweaks there are perceptually even.',
 			'Its registered methods gamutMap, maxChroma, isInGamut, atLightness, and atChroma let you keep a color in a target gamut while holding hue and tweaking only chroma or lightness.',
 			"rotateHue, complementary, triadic, and analogous build perceptually even harmonies that translate cleanly into any other model's view."
 		],
@@ -2906,7 +2906,7 @@ export const ENCYCLOPEDIA: Record<string, EncyclopediaEntry> = {
 		benefitsHere: [
 			'SCOTDIC is a catalog system flagged coming-soon: its `nearest`/`code` methods throw an actionable error until the licensed swatch dataset is available, so the app stays honest rather than inventing a code.',
 			'In the meantime any color can be inspected through perceptual views and `c.lab` to judge dye-matching proximity, the same kind of measurement SCOTDIC swatches are evaluated against.',
-			'Once data is supplied, lookups would resolve to colors stored in OKLCH like everything else in Chromatics, so a SCOTDIC swatch routes to any other model via `c.<id>`.'
+			'Once data is supplied, lookups would resolve to ordinary Chromatics colors, so a SCOTDIC swatch converts to any other model via `c.to("<id>")` or the `c.<id>` view.'
 		],
 		relations: {
 			convertsTo: ['srgb', 'lab'],

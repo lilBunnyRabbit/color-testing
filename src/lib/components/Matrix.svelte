@@ -16,10 +16,15 @@
 	const groups = $derived(
 		app.scheme.groups.map((g) => ({
 			label: g.label,
-			colors: g.entries.map((e): Cell =>
-				app.visionSim === 'none'
-					? { name: e.name, color: e.color, description: e.description }
-					: { name: e.name, color: simulateVision(e.color, app.visionSim), description: e.description }
+			colors: g.entries.map(
+				(e): Cell =>
+					app.visionSim === 'none'
+						? { name: e.name, color: e.color, description: e.description }
+						: {
+								name: e.name,
+								color: simulateVision(e.color, app.visionSim),
+								description: e.description
+							}
 			)
 		}))
 	);
@@ -80,7 +85,8 @@
 		const sep = `| ${'-'.repeat(w.name)} | ${'-'.repeat(w.hex)} | ${'-'.repeat(w.oklch)} | ${'-'.repeat(w.comment)} |`;
 		const header = `| ${pad('name', w.name)} | ${pad('hex', w.hex)} | ${pad('oklch', w.oklch)} | ${pad('comment', w.comment)} |`;
 		const body = rows.map(
-			(r) => `| ${pad(r.name, w.name)} | ${pad(r.hex, w.hex)} | ${pad(r.oklch, w.oklch)} | ${pad(r.comment, w.comment)} |`
+			(r) =>
+				`| ${pad(r.name, w.name)} | ${pad(r.hex, w.hex)} | ${pad(r.oklch, w.oklch)} | ${pad(r.comment, w.comment)} |`
 		);
 		return [header, sep, ...body].join('\n');
 	});
@@ -103,8 +109,14 @@
 			{/each}
 		</select>
 		<div class="seg">
-			<button class="seg-item {contrastModel === 'wcag' ? 'active' : ''}" onclick={() => (contrastModel = 'wcag')}>WCAG</button>
-			<button class="seg-item {contrastModel === 'apca' ? 'active' : ''}" onclick={() => (contrastModel = 'apca')}>APCA</button>
+			<button
+				class="seg-item {contrastModel === 'wcag' ? 'active' : ''}"
+				onclick={() => (contrastModel = 'wcag')}>WCAG</button
+			>
+			<button
+				class="seg-item {contrastModel === 'apca' ? 'active' : ''}"
+				onclick={() => (contrastModel = 'apca')}>APCA</button
+			>
 		</div>
 		<div class="legend">
 			<span class="lg"><i style="background: {wcagColor('AAA')}"></i>AAA</span>
@@ -118,7 +130,9 @@
 	</div>
 
 	{#if colors.length === 0}
-		<div class="matrix-empty">Define at least one color in the editor to see the contrast matrix.</div>
+		<div class="matrix-empty">
+			Define at least one color in the editor to see the contrast matrix.
+		</div>
 	{:else if ui.isMobile}
 		<div class="m-matrix">
 			<div class="m-bgpick">
@@ -152,7 +166,9 @@
 									<span class="m-sample-name">{fg.name}</span>
 									<span class="m-sample-metric">
 										{#if contrastModel === 'wcag'}
-											<b>{ratio.toFixed(2)}</b><i style="background: {wcagColor(levels.normal)}">{levels.normal}</i>
+											<b>{ratio.toFixed(2)}</b><i style="background: {wcagColor(levels.normal)}"
+												>{levels.normal}</i
+											>
 										{:else}
 											<b>Lc {Math.round(lc)}</b><i style="background: {apcaColor(use)}">{use}</i>
 										{/if}
@@ -204,7 +220,8 @@
 						{#each groups as colGroup, cgi (colGroup.label + cgi)}
 							{#if cgi > 0}<div class="matrix-cell-sep"></div>{/if}
 							{#each colGroup.colors as bg, localBi (bg.name)}
-								{@const bgIdx = groups.slice(0, cgi).reduce((s, g) => s + g.colors.length, 0) + localBi}
+								{@const bgIdx =
+									groups.slice(0, cgi).reduce((s, g) => s + g.colors.length, 0) + localBi}
 								{#if bgIdx === fgIdx}
 									<div style="background: {bg.color.toCSS()}"></div>
 								{:else}
@@ -212,14 +229,17 @@
 									{@const levels = wcagLevels(ratio)}
 									{@const lc = apcaContrast(fg.color, bg.color)}
 									{@const use = apcaUse(lc)}
-									{@const fail = contrastModel === 'wcag' ? levels.normal === 'Fail' : use === 'Fail'}
+									{@const fail =
+										contrastModel === 'wcag' ? levels.normal === 'Fail' : use === 'Fail'}
 									<!-- svelte-ignore a11y_click_events_have_key_events -->
 									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<div
 										class="matrix-cell"
 										class:matrix-cell-fail={fail}
 										style="background: {bg.color.toCSS()}; color: {fg.color.toCSS()}; --fg-alpha: {fgAlpha}"
-										title="{bg.name} bg + {fg.name} fg — WCAG {ratio.toFixed(2)}:1 ({levels.normal}/{levels.large}) · APCA Lc {Math.round(lc)} ({use})"
+										title="{bg.name} bg + {fg.name} fg — WCAG {ratio.toFixed(
+											2
+										)}:1 ({levels.normal}/{levels.large}) · APCA Lc {Math.round(lc)} ({use})"
 										onclick={() => selectCell(bgIdx, fgIdx)}
 									>
 										<div class="cell-content">
@@ -321,7 +341,8 @@
 					>
 					<button
 						class="dialog-btn-outline"
-						style="border-color: {sel.fg.color.toCSS()}; color: {sel.fg.color.toCSS()}">Outline</button
+						style="border-color: {sel.fg.color.toCSS()}; color: {sel.fg.color.toCSS()}"
+						>Outline</button
 					>
 					<span
 						class="dialog-badge-ui"
@@ -329,7 +350,9 @@
 					>
 					<span style="text-decoration: underline; font-size: 14px">Link text</span>
 				</div>
-				<hr style="border-color: {sel.fg.color.toCSS()}; border-top-width: 1px; opacity: 1; width: 100%" />
+				<hr
+					style="border-color: {sel.fg.color.toCSS()}; border-top-width: 1px; opacity: 1; width: 100%"
+				/>
 			</div>
 		</div>
 	{/if}

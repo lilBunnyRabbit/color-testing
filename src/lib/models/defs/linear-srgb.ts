@@ -1,7 +1,7 @@
 /** Linear sRGB — physically-correct blending/compositing (light-linear values). */
 import { register, defineModel, type CuloriColor } from '../registry';
 import { ColorValue } from '../value';
-import { method, lerpInMode, color, num, p } from '../util';
+import { method, lerpInMode, color, num, assertSameModel, p } from '../util';
 
 function scaleLrgb(self: ColorValue, factor: number): ColorValue {
 	const c = self.project('lrgb') as unknown as Record<string, number | undefined>;
@@ -31,7 +31,11 @@ register(
 				[p('other', 'color'), p('ratio', 'number', { optional: true })],
 				'color',
 				'Physically-correct linear blend (light-linear interpolation)',
-				(self, [o, r]) => lerpInMode(self, color(o), 'lrgb', r === undefined ? 0.5 : num(r))
+				(self, [o, r]) => {
+					const b = color(o);
+					assertSameModel(self, b, 'blend');
+					return lerpInMode(self, b, 'lrgb', r === undefined ? 0.5 : num(r));
+				}
 			),
 			method('premultiply', [p('alpha')], 'color', 'Scale linear channels by alpha', (self, [a]) =>
 				scaleLrgb(self, num(a))

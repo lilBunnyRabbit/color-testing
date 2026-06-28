@@ -1,7 +1,7 @@
 /** Oklab — perceptual rectangular. The default mix() space (matches CSS color-mix) + fast ΔE. */
 import { register, defineModel, differenceEuclidean, type CuloriColor } from '../registry';
 import { ColorValue } from '../value';
-import { method, lerpInMode, color, num, p } from '../util';
+import { method, lerpInMode, color, num, assertSameModel, p } from '../util';
 
 register(
 	defineModel({
@@ -25,14 +25,22 @@ register(
 				[p('other', 'color'), p('ratio', 'number', { optional: true })],
 				'color',
 				'Perceptual blend in Oklab (the CSS color-mix default)',
-				(self, [o, r]) => lerpInMode(self, color(o), 'oklab', r === undefined ? 0.5 : num(r))
+				(self, [o, r]) => {
+					const b = color(o);
+					assertSameModel(self, b, 'mix');
+					return lerpInMode(self, b, 'oklab', r === undefined ? 0.5 : num(r));
+				}
 			),
 			method(
 				'deltaEok',
 				[p('other', 'color')],
 				'number',
 				'Euclidean Oklab color difference (fast perceptual ΔE)',
-				(self, [o]) => differenceEuclidean('oklab')(self.project('oklab'), color(o).project('oklab'))
+				(self, [o]) => {
+					const b = color(o);
+					assertSameModel(self, b, 'deltaEok');
+					return differenceEuclidean('oklab')(self.project('oklab'), b.project('oklab'));
+				}
 			)
 		]
 	})

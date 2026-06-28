@@ -7,7 +7,7 @@
 import { register, defineModel, type CuloriColor } from '../registry';
 import { mkDeltaEuclidean } from '../families';
 import { ColorValue } from '../value';
-import { method, accessor, num, color, p } from '../util';
+import { method, accessor, num, color, assertSameModel, p } from '../util';
 
 const WX = 0.3127;
 const WY = 0.329; // D65 chromaticity
@@ -47,10 +47,21 @@ register(
 					} as unknown as CuloriColor);
 				}
 			),
-			method('setLuminance', [p('Y')], 'color', 'Set Y luminance, keeping chromaticity', (self, [y]) => {
-				const c = self.project('xyy') as unknown as Record<string, number | undefined>;
-				return ColorValue.from({ mode: 'xyy', x: c.x ?? 0, y: c.y ?? 0, Y: Math.max(0, num(y)) } as unknown as CuloriColor);
-			})
+			method(
+				'setLuminance',
+				[p('Y')],
+				'color',
+				'Set Y luminance, keeping chromaticity',
+				(self, [y]) => {
+					const c = self.project('xyy') as unknown as Record<string, number | undefined>;
+					return ColorValue.from({
+						mode: 'xyy',
+						x: c.x ?? 0,
+						y: c.y ?? 0,
+						Y: Math.max(0, num(y))
+					} as unknown as CuloriColor);
+				}
+			)
 		]
 	})
 );
@@ -81,10 +92,16 @@ register(
 				'Blend in the perceptually-uniform chromaticity plane',
 				(self, [o, t]) => {
 					const a = self.project('ucs') as unknown as Record<string, number | undefined>;
+					assertSameModel(self, color(o), 'blendUniform');
 					const b = color(o).project('ucs') as unknown as Record<string, number | undefined>;
 					const r = t === undefined ? 0.5 : num(t);
 					const lerp = (k: string) => (a[k] ?? 0) * (1 - r) + (b[k] ?? 0) * r;
-					return ColorValue.from({ mode: 'ucs', u: lerp('u'), v: lerp('v'), Y: lerp('Y') } as unknown as CuloriColor);
+					return ColorValue.from({
+						mode: 'ucs',
+						u: lerp('u'),
+						v: lerp('v'),
+						Y: lerp('Y')
+					} as unknown as CuloriColor);
 				}
 			)
 		]
@@ -94,7 +111,8 @@ register(
 // --- CIE 1960 UCS (uvY) — the space CCT is defined in ---
 function cctMcCamy(self: ColorValue): number {
 	const c = self.project('xyy') as unknown as Record<string, number | undefined>;
-	const x = c.x ?? 0, y = c.y ?? 0;
+	const x = c.x ?? 0,
+		y = c.y ?? 0;
 	const n = (x - 0.332) / (0.1858 - y);
 	return 449 * n ** 3 + 3525 * n ** 2 + 6823.3 * n + 5520.33;
 }
@@ -116,7 +134,9 @@ register(
 			{ key: 'ucs60_Y', localKey: 'Y', label: 'Y (luminance)', culoriField: 'Y', range: [0, 1] }
 		],
 		ownMethods: [
-			accessor('cct', 'number', 'Correlated colour temperature in K (McCamy)', (self) => cctMcCamy(self)),
+			accessor('cct', 'number', 'Correlated colour temperature in K (McCamy)', (self) =>
+				cctMcCamy(self)
+			),
 			accessor('isWarm', 'boolean', 'CCT below 5000 K', (self) => cctMcCamy(self) < 5000)
 		]
 	})
@@ -181,17 +201,42 @@ register(
 		},
 		channels: [
 			{ key: 'ipt_i', localKey: 'i', label: 'I (intensity)', culoriField: 'i', range: [0, 1] },
-			{ key: 'ipt_p', localKey: 'p', label: 'P (red–green)', culoriField: 'p', range: [-0.75, 0.75] },
-			{ key: 'ipt_t', localKey: 't', label: 'T (yellow–blue)', culoriField: 't', range: [-0.75, 0.75] }
+			{
+				key: 'ipt_p',
+				localKey: 'p',
+				label: 'P (red–green)',
+				culoriField: 'p',
+				range: [-0.75, 0.75]
+			},
+			{
+				key: 'ipt_t',
+				localKey: 't',
+				label: 'T (yellow–blue)',
+				culoriField: 't',
+				range: [-0.75, 0.75]
+			}
 		],
 		ownMethods: [
-			method('rotateHue', [p('degrees')], 'color', 'Rotate hue in IPT (its hue-linear P–T plane)', (self, [d]) => {
-				const c = self.project('ipt') as unknown as Record<string, number | undefined>;
-				const rad = (num(d) * Math.PI) / 180;
-				const cos = Math.cos(rad), sin = Math.sin(rad);
-				const pp = c.p ?? 0, tt = c.t ?? 0;
-				return ColorValue.from({ mode: 'ipt', i: c.i ?? 0, p: pp * cos - tt * sin, t: pp * sin + tt * cos } as unknown as CuloriColor);
-			}),
+			method(
+				'rotateHue',
+				[p('degrees')],
+				'color',
+				'Rotate hue in IPT (its hue-linear P–T plane)',
+				(self, [d]) => {
+					const c = self.project('ipt') as unknown as Record<string, number | undefined>;
+					const rad = (num(d) * Math.PI) / 180;
+					const cos = Math.cos(rad),
+						sin = Math.sin(rad);
+					const pp = c.p ?? 0,
+						tt = c.t ?? 0;
+					return ColorValue.from({
+						mode: 'ipt',
+						i: c.i ?? 0,
+						p: pp * cos - tt * sin,
+						t: pp * sin + tt * cos
+					} as unknown as CuloriColor);
+				}
+			),
 			mkDeltaEuclidean('deltaE', 'ipt', 'Euclidean colour difference in IPT')
 		]
 	})

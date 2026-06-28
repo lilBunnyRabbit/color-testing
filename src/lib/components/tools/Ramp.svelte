@@ -55,7 +55,10 @@
 					: `${base.name}.hct.atTone(${STOPS[i].t})`;
 			return `${name} = ${expr}`;
 		});
-		insert(lines, `Tonal ramp (${mode === 'oklch' ? 'OKLCH lightness' : 'HCT tone'}) from ${base.name}`);
+		insert(
+			lines,
+			`Tonal ramp (${mode === 'oklch' ? 'OKLCH lightness' : 'HCT tone'}) from ${base.name}`
+		);
 	}
 </script>
 
@@ -71,8 +74,12 @@
 				</select>
 			</label>
 			<div class="seg">
-				<button class="seg-item {mode === 'oklch' ? 'active' : ''}" onclick={() => (mode = 'oklch')}>OKLCH lightness</button>
-				<button class="seg-item {mode === 'hct' ? 'active' : ''}" onclick={() => (mode = 'hct')}>HCT tone</button>
+				<button class="seg-item {mode === 'oklch' ? 'active' : ''}" onclick={() => (mode = 'oklch')}
+					>OKLCH lightness</button
+				>
+				<button class="seg-item {mode === 'hct' ? 'active' : ''}" onclick={() => (mode = 'hct')}
+					>HCT tone</button
+				>
 			</div>
 			<button class="btn btn-accent" onclick={apply}>Insert {results.length} steps</button>
 		</div>

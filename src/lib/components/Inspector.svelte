@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Scheme } from '$lib/scheme/types';
+	import type { Scheme, SchemeEntry } from '$lib/scheme/types';
 	import type { ColorValue } from '$lib/models';
 	import type { DSLValue } from '$lib/dsl/evaluator.js';
 	import { nearestName } from '$lib/color-names';
@@ -41,6 +41,13 @@
 		['RGB', fmtRgb(c)],
 		['HSL', fmtHsl(c)]
 	];
+	// Which listed row is the variable's OWN model — highlighted so the value the
+	// color actually IS stands out (e.g. an HSL var shows its HSL row emphasised).
+	const NATIVE_KEY: Record<string, string> = { oklch: 'OKLCH', rgb: 'RGB', hsl: 'HSL' };
+	function nativeKey(e: SchemeEntry): string | null {
+		if (e.model === 'hex') return 'HEX';
+		return NATIVE_KEY[e.color.model] ?? null;
+	}
 </script>
 
 <div class="insp scroll">
@@ -59,6 +66,7 @@
 
 		<div class="grid">
 			{#each scheme.entries as e (e.name)}
+				{@const nk = nativeKey(e)}
 				<div class="row">
 					<button
 						class="sw"
@@ -72,7 +80,9 @@
 						<div class="line1">
 							<span class="name">{e.name}</span>
 							<span class="chip">{e.model}</span>
-							<span class="chip chip-name" title="nearest CSS color">≈ {nearestName(e.color).name}</span>
+							<span class="chip chip-name" title="nearest CSS color"
+								>≈ {nearestName(e.color).name}</span
+							>
 							{#if !e.color.inGamut}
 								<span class="badge badge-warn">out of gamut</span>
 							{:else if e.color.inP3}
@@ -81,7 +91,12 @@
 						</div>
 						<div class="convs">
 							{#each convs(e.color) as [k, v] (k)}
-								<button class="conv" onclick={() => copy(v)} title="copy {k}">
+								<button
+									class="conv"
+									class:is-native={k === nk}
+									onclick={() => copy(v)}
+									title={k === nk ? `${k} — this color's model` : `copy ${k}`}
+								>
 									<span class="conv-k">{k}</span>
 									<span class="conv-v mono">{copied === v ? 'copied!' : v}</span>
 								</button>
@@ -252,6 +267,19 @@
 	}
 	.conv:hover {
 		background: var(--surface-3);
+	}
+	/* The variable's OWN model — emphasised so its real value is unmistakable. */
+	.conv.is-native {
+		background: var(--accent-soft);
+		outline: 1px solid var(--accent);
+		grid-column: 1 / -1;
+	}
+	.conv.is-native .conv-k {
+		color: var(--accent);
+	}
+	.conv.is-native .conv-v {
+		color: var(--text);
+		font-weight: 600;
 	}
 	.conv-k {
 		font-size: 9px;

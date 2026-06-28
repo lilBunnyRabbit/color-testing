@@ -49,7 +49,9 @@ export function toTokens(scheme: Scheme): string {
 /** Tailwind v4 @theme block + a legacy config colors object. */
 export function toTailwind(scheme: Scheme): string {
 	const theme = scheme.entries.map((e) => `  --color-${kebab(e.name)}: ${e.color.hex};`).join('\n');
-	const colors = scheme.entries.map((e) => `        '${kebab(e.name)}': '${e.color.hex}',`).join('\n');
+	const colors = scheme.entries
+		.map((e) => `        '${kebab(e.name)}': '${e.color.hex}',`)
+		.join('\n');
 	return `@theme {\n${theme}\n}\n\n/* legacy tailwind.config.js */\nexport default {\n  theme: {\n    extend: {\n      colors: {\n${colors}\n      }\n    }\n  }\n};`;
 }
 
@@ -72,7 +74,8 @@ export function toMarkdown(scheme: Scheme): string {
 	const sep = `| ${'-'.repeat(w.name)} | ${'-'.repeat(w.hex)} | ${'-'.repeat(w.oklch)} | ${'-'.repeat(w.comment)} |`;
 	const header = `| ${pad('name', w.name)} | ${pad('hex', w.hex)} | ${pad('oklch', w.oklch)} | ${pad('comment', w.comment)} |`;
 	const body = rows.map(
-		(r) => `| ${pad(r.name, w.name)} | ${pad(r.hex, w.hex)} | ${pad(r.oklch, w.oklch)} | ${pad(r.comment, w.comment)} |`
+		(r) =>
+			`| ${pad(r.name, w.name)} | ${pad(r.hex, w.hex)} | ${pad(r.oklch, w.oklch)} | ${pad(r.comment, w.comment)} |`
 	);
 	return [header, sep, ...body].join('\n');
 }

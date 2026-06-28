@@ -9,9 +9,7 @@
 	const kind = $derived(data?.__preview as string);
 
 	// — pair —
-	const pairCss = $derived(
-		kind === 'pair' ? { bg: data.bg.toCSS(), fg: data.fg.toCSS() } : null
-	);
+	const pairCss = $derived(kind === 'pair' ? { bg: data.bg.toCSS(), fg: data.fg.toCSS() } : null);
 	const ratio = $derived(kind === 'pair' ? contrastRatio(data.fg, data.bg) : 0);
 	const wcag = $derived(kind === 'pair' ? wcagLevels(ratio) : null);
 	const lc = $derived(kind === 'pair' ? apcaContrast(data.fg, data.bg) : 0);
@@ -21,9 +19,7 @@
 	const cvdModes = $derived(visionSimulations.filter((s) => s.value !== 'none'));
 
 	// — onBackgrounds —
-	const backgrounds = $derived(
-		kind === 'onBackgrounds' ? (data.backgrounds ?? []) : []
-	);
+	const backgrounds = $derived(kind === 'onBackgrounds' ? (data.backgrounds ?? []) : []);
 </script>
 
 <div class="pa-root">
@@ -41,15 +37,17 @@
 				<span class="badge" style="background:{apcaColor(use)}">{use}</span>
 			</div>
 		</div>
-		<p class="hint">APCA's verdict depends on size &amp; weight — that's why the specimen spans several.</p>
+		<p class="hint">
+			APCA's verdict depends on size &amp; weight — that's why the specimen spans several.
+		</p>
 
 		<div class="specimen" style="background:{pairCss.bg}; color:{pairCss.fg}">
 			<div class="sp-h1">Heading</div>
 			<div class="sp-h2">Color is a power which directly influences the soul</div>
 			<hr class="rule-thin" style="border-color:{pairCss.fg}" />
 			<p class="sp-body">
-				Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-				incididunt ut labore et dolore magna aliqua.
+				Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
+				labore et dolore magna aliqua.
 			</p>
 			<hr class="rule-thick" style="border-color:{pairCss.fg}" />
 			<div class="sp-small">Small caption — 12px regular weight, the readability floor.</div>

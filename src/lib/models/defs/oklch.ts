@@ -1,6 +1,6 @@
-/** OKLCH — perceptual cylindrical. The canonical storage space + gamut mapping. */
+/** OKLCH — perceptual cylindrical. The perceptual workhorse for color math + gamut mapping. */
 import { register, defineModel, toGamut, formatCss, type CuloriColor } from '../registry';
-import { PERCEPTUAL_CYL_OPS } from '../families';
+import { PERCEPTUAL_CYL_OPS, OKLCH_OPS } from '../families';
 import { ColorValue } from '../value';
 import { method, accessor, makeOklch, clamp01, num, str, maxChromaFor, p } from '../util';
 
@@ -10,7 +10,11 @@ register(
 		label: 'OKLCH',
 		family: 'perceptual-cylindrical',
 		priority: 'critical',
-		ctor: { name: 'OKLCH', params: [p('l'), p('c'), p('h')], build: ([l, c, h]) => makeOklch(l, c, h) },
+		ctor: {
+			name: 'OKLCH',
+			params: [p('l'), p('c'), p('h')],
+			build: ([l, c, h]) => makeOklch(l, c, h)
+		},
 		channels: [
 			{ key: 'ok_l', localKey: 'l', label: 'Lightness', culoriField: 'l', range: [0, 1] },
 			{ key: 'ok_c', localKey: 'c', label: 'Chroma', culoriField: 'c', range: [0, 0.4] },
@@ -38,7 +42,7 @@ register(
 					for (const k of ['r', 'g', 'b'] as const) {
 						if (typeof mapped[k] === 'number') mapped[k] = clamp01(mapped[k] as number);
 					}
-					return ColorValue.from(mapped as unknown as CuloriColor);
+					return ColorValue.from(mapped as unknown as CuloriColor).to('oklch');
 				}
 			),
 			method(
@@ -51,7 +55,7 @@ register(
 			),
 			accessor('isInGamut', 'boolean', 'Displayable in sRGB', (self) => self.inGamut)
 		],
-		inherit: PERCEPTUAL_CYL_OPS,
+		inherit: [...PERCEPTUAL_CYL_OPS, ...OKLCH_OPS],
 		toCSS: (self) => formatCss(self.project('oklch')) ?? self.hex
 	})
 );

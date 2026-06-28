@@ -134,29 +134,34 @@
 					{#if showGuide}
 						<div class="guide-body">
 							<p>
-								Every value is <strong>model-agnostic</strong>. Reach any model as a view, then read
-								a channel or call a method — the result is a normal color you keep chaining.
+								Every value <strong>carries its model</strong>. A color stays in the model it was
+								built in and only changes when you ask — so a color exposes <em>its own</em> model's ops
+								directly, and you name another model only to borrow its math.
 							</p>
 							<ul>
 								<li>
-									<strong>Convert by accessing a view.</strong> Any color reaches
-									<strong>any of the {manifest.models.length - 1} models</strong> directly — there's
-									no conversion graph to manage (colors are stored in OKLCH and routed through
-									culori).
-									<code>c.hsl</code>, <code>c.lab</code>, <code>c.cam16</code> …
+									<strong>A color stays in its model.</strong>
+									<code>HSL(265, 0.6, 0.62)</code> stays HSL — reading <code>.h</code> gives back
+									<code>265</code>. Convert explicitly with <code>c.to("oklch")</code> or
+									<code>OKLCH.from(c)</code> (direct edge where one exists, else routed through culori).
 								</li>
 								<li>
-									<strong>Read a channel:</strong>
-									<code>OKLCH(0.7, 0.12, 250).hsl.h</code> → the hue in HSL.
+									<strong>Ops live on the model you're in</strong> — no prefix needed:
+									<code>okColor.lighten(0.1)</code>, <code>okColor.rotate(30)</code>,
+									<code>hslColor.tint(0.4)</code>. Each returns a new color.
 								</li>
 								<li>
-									<strong>Manipulate &amp; chain</strong> (methods return a new color):
-									<code>OKLCH(0.7, 0.12, 250).hsl.rotateHue(30).lab.l</code>.
+									<strong>Borrow another model's math by naming it</strong> (an explicit
+									conversion):
+									<code>brand.oklch.lighten(0.1)</code> thinks in OKLCH from a non-OKLCH color;
+									<code>c.lab.l</code> reads lightness in Lab.
 								</li>
 								<li>
-									<strong>Change one channel</strong> by reconstructing with the others:
-									<code>HSL(c.hsl.h, 0.5, c.hsl.l)</code> sets saturation to 0.5 — no "convert back" step,
-									the result is already a color.
+									<strong>Binary ops need the same model.</strong>
+									<code>mix</code>, <code>contrast</code> and <code>deltaE</code> require both
+									colors in one model — <code>mix(a, b)</code> when they already match, else convert
+									first:
+									<code>mix(a.oklab, b.oklab)</code>.
 								</li>
 							</ul>
 						</div>

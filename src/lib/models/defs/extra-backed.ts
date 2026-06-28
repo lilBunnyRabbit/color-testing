@@ -26,11 +26,22 @@ register(
 			{ key: 'xyz50_z', localKey: 'z', label: 'Z', culoriField: 'z', range: [0, 1] }
 		],
 		ownMethods: [
-			method('scaleLuminance', [p('factor')], 'color', 'Scale luminance (X,Y,Z) preserving chromaticity', (self, [f]) => {
-				const c = self.project('xyz50') as unknown as Record<string, number | undefined>;
-				const k = num(f);
-				return ColorValue.from({ mode: 'xyz50', x: (c.x ?? 0) * k, y: (c.y ?? 0) * k, z: (c.z ?? 0) * k } as unknown as CuloriColor);
-			})
+			method(
+				'scaleLuminance',
+				[p('factor')],
+				'color',
+				'Scale luminance (X,Y,Z) preserving chromaticity',
+				(self, [f]) => {
+					const c = self.project('xyz50') as unknown as Record<string, number | undefined>;
+					const k = num(f);
+					return ColorValue.from({
+						mode: 'xyz50',
+						x: (c.x ?? 0) * k,
+						y: (c.y ?? 0) * k,
+						z: (c.z ?? 0) * k
+					} as unknown as CuloriColor);
+				}
+			)
 		]
 	})
 );
@@ -47,9 +58,21 @@ register(
 			build: ([x, y, b]) => ({ mode: 'xyb', x, y, b }) as unknown as CuloriColor
 		},
 		channels: [
-			{ key: 'xyb_x', localKey: 'x', label: 'X (red–green)', culoriField: 'x', range: [-0.03, 0.03] },
+			{
+				key: 'xyb_x',
+				localKey: 'x',
+				label: 'X (red–green)',
+				culoriField: 'x',
+				range: [-0.03, 0.03]
+			},
 			{ key: 'xyb_y', localKey: 'y', label: 'Y (luminance)', culoriField: 'y', range: [0, 1] },
-			{ key: 'xyb_b', localKey: 'b', label: 'B (blue–yellow)', culoriField: 'b', range: [-0.5, 0.5] }
+			{
+				key: 'xyb_b',
+				localKey: 'b',
+				label: 'B (blue–yellow)',
+				culoriField: 'b',
+				range: [-0.5, 0.5]
+			}
 		],
 		ownMethods: [mkDeltaEuclidean('deltaExyb', 'xyb', 'Euclidean XYB color difference')]
 	})

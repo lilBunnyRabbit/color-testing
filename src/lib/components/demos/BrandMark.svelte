@@ -41,7 +41,9 @@
 	const secondaryEntry = $derived(
 		(primaryEntry ? brand.filter((e) => e !== primaryEntry) : brand)[0] ?? null
 	);
-	const secondaryFill = $derived(secondaryEntry ? secondaryEntry.color.toCSS() : 'var(--secondary)');
+	const secondaryFill = $derived(
+		secondaryEntry ? secondaryEntry.color.toCSS() : 'var(--secondary)'
+	);
 	const secondaryFg = $derived(secondaryEntry ? fgFor(secondaryEntry) : 'var(--secondary-fg)');
 
 	type Lockup = { label: string; bg: string; fill: string; text: string };
@@ -59,31 +61,25 @@
 
 {#snippet glyph(fill: string, size: number)}
 	<!-- Two overlapping rounded squares — a compact, recognizable identity mark. -->
-	<svg
-		class="glyph"
-		width={size}
-		height={size}
-		viewBox="0 0 32 32"
-		fill="none"
-		aria-hidden="true"
-	>
-		<rect x="3" y="3" width="19" height="19" rx="5" fill={fill} opacity="0.55" />
-		<rect x="10" y="10" width="19" height="19" rx="5" fill={fill} />
+	<svg class="glyph" width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+		<rect x="3" y="3" width="19" height="19" rx="5" {fill} opacity="0.55" />
+		<rect x="10" y="10" width="19" height="19" rx="5" {fill} />
 	</svg>
 {/snippet}
 
 {#snippet mark(fill: string, textColor: string, glyphOnly: boolean, accent?: string)}
 	<span class="mark" class:glyph-only={glyphOnly}>
-		<svg
-			class="glyph"
-			width="28"
-			height="28"
-			viewBox="0 0 32 32"
-			fill="none"
-			aria-hidden="true"
-		>
-			<rect x="3" y="3" width="19" height="19" rx="5" fill={accent ?? fill} opacity={accent ? '1' : '0.55'} />
-			<rect x="10" y="10" width="19" height="19" rx="5" fill={fill} />
+		<svg class="glyph" width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+			<rect
+				x="3"
+				y="3"
+				width="19"
+				height="19"
+				rx="5"
+				fill={accent ?? fill}
+				opacity={accent ? '1' : '0.55'}
+			/>
+			<rect x="10" y="10" width="19" height="19" rx="5" {fill} />
 		</svg>
 		{#if !glyphOnly}
 			<span class="wordmark" style="color: {textColor}">Acme</span>
@@ -138,10 +134,7 @@
 					<div class="bm-tile-label">Knockout</div>
 				</div>
 				<div class="bm-tile">
-					<div
-						class="bm-stage"
-						style="background: color-mix(in srgb, {brand1} 12%, white)"
-					>
+					<div class="bm-stage" style="background: color-mix(in srgb, {brand1} 12%, white)">
 						{@render mark(brand1, brand1, false)}
 					</div>
 					<div class="bm-tile-label">One-color on tint</div>

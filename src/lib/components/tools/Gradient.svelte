@@ -22,9 +22,11 @@
 
 	function expr(t: number): string {
 		const r = round(t, 3);
-		if (space === 'oklab') return `${a.name}.oklab.mix(${b.name}, ${r})`;
-		if (space === 'oklch') return `mix(${a.name}, ${b.name}, ${r})`;
-		return `${a.name}.lin.blend(${b.name}, ${r})`;
+		// Mix in the chosen space; convert BOTH operands into it so the same-model
+		// rule holds regardless of how a and b were authored.
+		if (space === 'oklab') return `mix(${a.name}.oklab, ${b.name}.oklab, ${r})`;
+		if (space === 'oklch') return `mix(${a.name}.oklch, ${b.name}.oklch, ${r})`;
+		return `mix(${a.name}.lin, ${b.name}.lin, ${r})`;
 	}
 
 	// Preview = A, the intermediate stops, then B.
@@ -88,7 +90,9 @@
 				<span>Stops · {stops}</span>
 				<input type="range" min="1" max="7" bind:value={stops} />
 			</label>
-			<button class="btn btn-accent" onclick={apply}>Insert {stops} color{stops > 1 ? 's' : ''}</button>
+			<button class="btn btn-accent" onclick={apply}
+				>Insert {stops} color{stops > 1 ? 's' : ''}</button
+			>
 		</div>
 
 		<div class="bar" style="background:{css}"></div>

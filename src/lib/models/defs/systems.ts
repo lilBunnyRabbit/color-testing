@@ -7,7 +7,14 @@
  *    Copic, Trumatch) have no openly-distributable dataset, so they advertise
  *    their lookups but are `coming-soon` (throw an actionable error on use).
  */
-import { register, defineModel, parse, toMode, differenceCiede2000, type CuloriColor } from '../registry';
+import {
+	register,
+	defineModel,
+	parse,
+	toMode,
+	differenceCiede2000,
+	type CuloriColor
+} from '../registry';
 import { ColorValue } from '../value';
 import { method, unbacked } from '../util';
 import { RAL_CLASSIC, type Swatch } from './data/ral-classic';
@@ -43,8 +50,20 @@ function catalogSystem(id: string, label: string, swatches: Swatch[]) {
 				method('nearest', [], 'color', `Closest ${label} swatch (ΔE2000)`, (self) =>
 					ColorValue.from(parse(nearest(self).hex) as CuloriColor)
 				),
-				method('code', [], 'string', `${label} code of the nearest swatch`, (self) => nearest(self).code),
-				method('name', [], 'string', `${label} name of the nearest swatch`, (self) => nearest(self).name),
+				method(
+					'code',
+					[],
+					'string',
+					`${label} code of the nearest swatch`,
+					(self) => nearest(self).code
+				),
+				method(
+					'name',
+					[],
+					'string',
+					`${label} name of the nearest swatch`,
+					(self) => nearest(self).name
+				),
 				method('deltaE', [], 'number', `ΔE2000 to the nearest ${label} swatch`, (self) =>
 					deltaE(self.project('lab'), toMode('lab')(parse(nearest(self).hex) as CuloriColor))
 				)

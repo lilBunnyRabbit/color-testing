@@ -9,9 +9,7 @@
 	const primaryEntry = $derived(
 		entries.find((e) => /^(primary|brand)$/i.test(e.name)) ?? entries[0]
 	);
-	const secondaryEntry = $derived(
-		entries.find((e) => e !== primaryEntry) ?? entries[1]
-	);
+	const secondaryEntry = $derived(entries.find((e) => e !== primaryEntry) ?? entries[1]);
 
 	const primary = $derived(primaryEntry ? primaryEntry.color.toCSS() : 'var(--primary)');
 	const secondary = $derived(secondaryEntry ? secondaryEntry.color.toCSS() : 'var(--secondary)');
@@ -65,8 +63,8 @@
 		role="img"
 		aria-label="{brand} mark"
 	>
-		<rect x="3" y="3" width="19" height="19" rx="6" fill={fill} opacity="0.95" />
-		<circle cx="22" cy="22" r="8" fill={fill} opacity="0.55" />
+		<rect x="3" y="3" width="19" height="19" rx="6" {fill} opacity="0.95" />
+		<circle cx="22" cy="22" r="8" {fill} opacity="0.55" />
 	</svg>
 {/snippet}
 
@@ -106,10 +104,7 @@
 	<figure class="stage">
 		<figcaption class="cap">App icon</figcaption>
 		<div class="icon-stage">
-			<div
-				class="appicon"
-				style="background:linear-gradient(135deg, {primary}, {secondary})"
-			>
+			<div class="appicon" style="background:linear-gradient(135deg, {primary}, {secondary})">
 				<div class="appicon-highlight"></div>
 				{@render glyph(primaryFg, 48)}
 			</div>
@@ -139,10 +134,7 @@
 	<!-- 5. Social banner / post --------------------------------------------- -->
 	<figure class="stage stage-wide">
 		<figcaption class="cap">Social banner</figcaption>
-		<div
-			class="banner"
-			style="background:linear-gradient(120deg, {primary}, {secondary})"
-		>
+		<div class="banner" style="background:linear-gradient(120deg, {primary}, {secondary})">
 			<div class="banner-tag">
 				{@render glyph('#ffffff', 18)}
 				<span>{brand}</span>

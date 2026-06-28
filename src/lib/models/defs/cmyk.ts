@@ -38,10 +38,15 @@ register(
 				const { c, m, y, k } = cmykOf(self);
 				return (c + m + y + k) * 100;
 			}),
-			accessor('isRichBlack', 'boolean', 'Black built with supporting CMY ink (TAC > 100%)', (self) => {
-				const { c, m, y, k } = cmykOf(self);
-				return k > 0.5 && c + m + y > 0.1;
-			}),
+			accessor(
+				'isRichBlack',
+				'boolean',
+				'Black built with supporting CMY ink (TAC > 100%)',
+				(self) => {
+					const { c, m, y, k } = cmykOf(self);
+					return k > 0.5 && c + m + y > 0.1;
+				}
+			),
 			method('separations', [], 'colors', 'The four single-ink plates (C, M, Y, K)', (self) => {
 				const { c, m, y, k } = cmykOf(self);
 				return [

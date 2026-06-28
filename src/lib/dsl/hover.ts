@@ -36,7 +36,8 @@ function lookup(name: string, getVarInfo: (n: string) => VarInfo | null): Tip | 
 	// 4) member: method / accessor / channel / view
 	const m = manifest.members.get(name);
 	if (m) {
-		const detail = m.kind === 'view' ? 'view namespace' : m.kind === 'channel' ? 'channel · number' : m.detail;
+		const detail =
+			m.kind === 'view' ? 'view namespace' : m.kind === 'channel' ? 'channel · number' : m.detail;
 		const doc =
 			m.status === 'experimental'
 				? `${m.doc} — experimental`

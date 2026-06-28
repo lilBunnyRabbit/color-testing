@@ -38,7 +38,9 @@ describe('long-tail models', () => {
 	});
 
 	test('experimental CMYK constructor now computes (was a stub)', () => {
-		const r = evaluate('a = OKLCH(0.6,0.1,200)\nink = a.cmyk.totalInk\ncyan = CMYK(1,0,0,0)\ngood = a.lighten(0.1)');
+		const r = evaluate(
+			'a = OKLCH(0.6,0.1,200)\nink = a.cmyk.totalInk\ncyan = CMYK(1,0,0,0)\ngood = a.oklch.lighten(0.1)'
+		);
 		expect(r.errors).toEqual([]);
 		expect(typeof r.variables.get('ink')!.value).toBe('number');
 		expect(r.variables.get('cyan')).toBeDefined();
@@ -46,7 +48,9 @@ describe('long-tail models', () => {
 	});
 
 	test('coming-soon system method throws an actionable error, caught per-statement', () => {
-		const r = evaluate('a = OKLCH(0.6,0.1,200)\nbad = a.munsell.nearest()\ngood = a.lighten(0.1)');
+		const r = evaluate(
+			'a = OKLCH(0.6,0.1,200)\nbad = a.munsell.nearest()\ngood = a.oklch.lighten(0.1)'
+		);
 		expect(r.errors.length).toBe(1);
 		expect(r.errors[0].message).toContain('@lilbunnyrabbit/chromatics');
 		expect(r.errors[0].line).toBe(2);
@@ -60,9 +64,9 @@ describe('expanded model set', () => {
 			`b = OKLCH(0.6, 0.13, 264)
 g = A98(0.3, 0.7, 0.2)
 inA98 = b.a98.isInGamut
-dz = b.jab.deltaEz(g)
-d99 = b.dlab.deltaE99(g)
-duv = b.luv.deltaEuv(g)
+dz = b.jab.deltaEz(g.oklch)
+d99 = b.dlab.deltaE99(g.oklch)
+duv = b.luv.deltaEuv(g.oklch)
 rot = b.okhsl.rotateHue(60)`
 		);
 		expect(r.errors).toEqual([]);
@@ -76,7 +80,9 @@ rot = b.okhsl.rotateHue(60)`
 	});
 
 	test('color systems advertise their lookups but throw actionably', () => {
-		const r = evaluate('b = OKLCH(0.6, 0.13, 264)\nx = b.pantone.nearest()\nok = b.lighten(0.1)');
+		const r = evaluate(
+			'b = OKLCH(0.6, 0.13, 264)\nx = b.pantone.nearest()\nok = b.oklch.lighten(0.1)'
+		);
 		expect(r.errors.length).toBe(1);
 		expect(r.errors[0].message).toContain('@lilbunnyrabbit/chromatics');
 		expect(r.variables.get('ok')).toBeDefined();

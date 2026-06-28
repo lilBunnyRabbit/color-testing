@@ -47,9 +47,27 @@ register(
 			build: ([l, m, s]) => ({ mode: 'lms', l, m, s }) as unknown as CuloriColor
 		},
 		channels: [
-			{ key: 'lms_l', localKey: 'l', label: 'L (long / red cone)', culoriField: 'l', range: [0, 1] },
-			{ key: 'lms_m', localKey: 'm', label: 'M (medium / green cone)', culoriField: 'm', range: [0, 1] },
-			{ key: 'lms_s', localKey: 's', label: 'S (short / blue cone)', culoriField: 's', range: [0, 1] }
+			{
+				key: 'lms_l',
+				localKey: 'l',
+				label: 'L (long / red cone)',
+				culoriField: 'l',
+				range: [0, 1]
+			},
+			{
+				key: 'lms_m',
+				localKey: 'm',
+				label: 'M (medium / green cone)',
+				culoriField: 'm',
+				range: [0, 1]
+			},
+			{
+				key: 'lms_s',
+				localKey: 's',
+				label: 'S (short / blue cone)',
+				culoriField: 's',
+				range: [0, 1]
+			}
 		],
 		ownMethods: [
 			method(
@@ -62,9 +80,9 @@ register(
 					const key = str(t).toLowerCase()[0];
 					return ColorValue.from({
 						mode: 'lms',
-						l: key === 'l' ? 0 : c.l ?? 0,
-						m: key === 'm' ? 0 : c.m ?? 0,
-						s: key === 's' ? 0 : c.s ?? 0
+						l: key === 'l' ? 0 : (c.l ?? 0),
+						m: key === 'm' ? 0 : (c.m ?? 0),
+						s: key === 's' ? 0 : (c.s ?? 0)
 					} as unknown as CuloriColor);
 				}
 			),

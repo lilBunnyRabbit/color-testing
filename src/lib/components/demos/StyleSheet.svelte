@@ -13,8 +13,18 @@
 	const pairings = [
 		{ label: 'Text on bg', bg: 'var(--bg)', fg: 'var(--fg)', sample: 'Body text' },
 		{ label: 'Primary on bg', bg: 'var(--bg)', fg: 'var(--primary)', sample: 'Accent link' },
-		{ label: 'Primary fg on primary', bg: 'var(--primary)', fg: 'var(--primary-fg)', sample: 'Button label' },
-		{ label: 'Secondary on surface', bg: 'var(--surface)', fg: 'var(--secondary)', sample: 'Highlight' }
+		{
+			label: 'Primary fg on primary',
+			bg: 'var(--primary)',
+			fg: 'var(--primary-fg)',
+			sample: 'Button label'
+		},
+		{
+			label: 'Secondary on surface',
+			bg: 'var(--surface)',
+			fg: 'var(--secondary)',
+			sample: 'Highlight'
+		}
 	];
 </script>
 
@@ -70,7 +80,9 @@
 			<div class="ui-row">
 				<span class="badge badge-primary">Primary</span>
 				<span class="badge badge-secondary">Secondary</span>
-				<span class="ui-text">Read the <a class="ui-link" href="#a">documentation</a> for details.</span>
+				<span class="ui-text"
+					>Read the <a class="ui-link" href="#a">documentation</a> for details.</span
+				>
 			</div>
 		</div>
 	</section>

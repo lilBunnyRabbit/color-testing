@@ -42,14 +42,26 @@ register(
 				const { h, c, t } = hctOf(self);
 				return fromHct({ h: wrapHue(h + num(d)), c, t });
 			}),
-			method('atTone', [p('tone')], 'color', 'Same hue & chroma at a given tone (L* 0–100)', (self, [tn]) => {
-				const { h, c } = hctOf(self);
-				return fromHct({ h, c, t: Math.max(0, Math.min(100, num(tn))) });
-			}),
-			method('withChroma', [p('chroma')], 'color', 'Same hue & tone at a given CAM16 chroma', (self, [cc]) => {
-				const { h, t } = hctOf(self);
-				return fromHct({ h, c: Math.max(0, num(cc)), t });
-			}),
+			method(
+				'atTone',
+				[p('tone')],
+				'color',
+				'Same hue & chroma at a given tone (L* 0–100)',
+				(self, [tn]) => {
+					const { h, c } = hctOf(self);
+					return fromHct({ h, c, t: Math.max(0, Math.min(100, num(tn))) });
+				}
+			),
+			method(
+				'withChroma',
+				[p('chroma')],
+				'color',
+				'Same hue & tone at a given CAM16 chroma',
+				(self, [cc]) => {
+					const { h, t } = hctOf(self);
+					return fromHct({ h, c: Math.max(0, num(cc)), t });
+				}
+			),
 			method(
 				'tonalPalette',
 				[p('tones', 'object', { optional: true })],

@@ -31,17 +31,28 @@ register(
 			{ key: 'hwb_b', localKey: 'b', label: 'Blackness', culoriField: 'b', range: [0, 1] }
 		],
 		ownMethods: [
-			method('addWhite', [p('amount')], 'color', 'Raise whiteness (tint toward white)', (self, [a]) =>
-				fromHwb(self, { w: clamp01(self.channel('hwb_w') + num(a)) })
+			method(
+				'addWhite',
+				[p('amount')],
+				'color',
+				'Raise whiteness (tint toward white)',
+				(self, [a]) => fromHwb(self, { w: clamp01(self.channel('hwb_w') + num(a)) })
 			),
-			method('addBlack', [p('amount')], 'color', 'Raise blackness (shade toward black)', (self, [a]) =>
-				fromHwb(self, { b: clamp01(self.channel('hwb_b') + num(a)) })
+			method(
+				'addBlack',
+				[p('amount')],
+				'color',
+				'Raise blackness (shade toward black)',
+				(self, [a]) => fromHwb(self, { b: clamp01(self.channel('hwb_b') + num(a)) })
 			),
 			method('pureHue', [], 'color', 'Set whiteness and blackness to 0', (self) =>
 				fromHwb(self, { w: 0, b: 0 })
 			),
-			accessor('isGray', 'boolean', 'Whiteness + blackness ≥ 1', (self) =>
-				self.channel('hwb_w') + self.channel('hwb_b') >= 1
+			accessor(
+				'isGray',
+				'boolean',
+				'Whiteness + blackness ≥ 1',
+				(self) => self.channel('hwb_w') + self.channel('hwb_b') >= 1
 			)
 		],
 		inherit: HUE_OPS

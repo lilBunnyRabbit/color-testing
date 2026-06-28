@@ -28,24 +28,36 @@ register(
 		],
 		ownMethods: [
 			mkRotateHueNative('hsluv'),
-			method('saturate', [p('amount')], 'color', 'Add to perceptual saturation (0–100)', (self, [a]) => {
-				const c = self.project('hsluv') as unknown as Record<string, number | undefined>;
-				return ColorValue.from({
-					mode: 'hsluv',
-					h: c.h ?? 0,
-					s: Math.max(0, Math.min(100, (c.s ?? 0) + num(a))),
-					l: c.l ?? 0
-				} as unknown as CuloriColor);
-			}),
-			method('withLightness', [p('l')], 'color', 'Set perceptual lightness (0–100)', (self, [l]) => {
-				const c = self.project('hsluv') as unknown as Record<string, number | undefined>;
-				return ColorValue.from({
-					mode: 'hsluv',
-					h: c.h ?? 0,
-					s: c.s ?? 0,
-					l: clamp01(num(l) / 100) * 100
-				} as unknown as CuloriColor);
-			})
+			method(
+				'saturate',
+				[p('amount')],
+				'color',
+				'Add to perceptual saturation (0–100)',
+				(self, [a]) => {
+					const c = self.project('hsluv') as unknown as Record<string, number | undefined>;
+					return ColorValue.from({
+						mode: 'hsluv',
+						h: c.h ?? 0,
+						s: Math.max(0, Math.min(100, (c.s ?? 0) + num(a))),
+						l: c.l ?? 0
+					} as unknown as CuloriColor);
+				}
+			),
+			method(
+				'withLightness',
+				[p('l')],
+				'color',
+				'Set perceptual lightness (0–100)',
+				(self, [l]) => {
+					const c = self.project('hsluv') as unknown as Record<string, number | undefined>;
+					return ColorValue.from({
+						mode: 'hsluv',
+						h: c.h ?? 0,
+						s: c.s ?? 0,
+						l: clamp01(num(l) / 100) * 100
+					} as unknown as CuloriColor);
+				}
+			)
 		]
 	})
 );
@@ -64,7 +76,13 @@ register(
 		},
 		channels: [
 			{ key: 'hpluv_h', localKey: 'h', label: 'Hue', culoriField: 'h', range: [0, 360] },
-			{ key: 'hpluv_p', localKey: 'p', label: 'Saturation (pastel)', culoriField: 'p', range: [0, 100] },
+			{
+				key: 'hpluv_p',
+				localKey: 'p',
+				label: 'Saturation (pastel)',
+				culoriField: 'p',
+				range: [0, 100]
+			},
 			{ key: 'hpluv_l', localKey: 'l', label: 'Lightness', culoriField: 'l', range: [0, 100] }
 		],
 		ownMethods: [mkRotateHueNative('hpluv')]

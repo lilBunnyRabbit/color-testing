@@ -20,8 +20,12 @@ export const spow = (x: number, p: number): number => Math.sign(x) * Math.pow(Ma
 
 /** Inverse of a 3×3 matrix (adjugate / determinant). */
 export const inv3 = (m: number[][]): number[][] => {
-	const [a, b, c] = m[0], [d, e, f] = m[1], [g, h, i] = m[2];
-	const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g;
+	const [a, b, c] = m[0],
+		[d, e, f] = m[1],
+		[g, h, i] = m[2];
+	const A = e * i - f * h,
+		B = -(d * i - f * g),
+		C = d * h - e * g;
 	const det = a * A + b * B + c * C;
 	return [
 		[A / det, (c * h - b * i) / det, (b * f - c * e) / det],
@@ -31,8 +35,10 @@ export const inv3 = (m: number[][]): number[][] => {
 };
 
 /** sRGB / Rec.709 transfer pair (gamma-encoded ↔ linear). */
-export const eotfSrgb = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
-export const oetfSrgb = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
+export const eotfSrgb = (c: number) =>
+	c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+export const oetfSrgb = (c: number) =>
+	c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
 
 /** D65 reference white in CIE XYZ (matches culori's xyz65 scaling, Y=1). */
 export const D65: Vec = [0.9504559270516716, 1, 1.0890577507598784];
@@ -72,7 +78,10 @@ export function defMode(
 
 	const toRgb = (c: Obj) => {
 		const [a, b, d] = toVia(c);
-		const viaColor = { mode: via, [viaCh[0]]: a, [viaCh[1]]: b, [viaCh[2]]: d } as Record<string, unknown>;
+		const viaColor = { mode: via, [viaCh[0]]: a, [viaCh[1]]: b, [viaCh[2]]: d } as Record<
+			string,
+			unknown
+		>;
 		const out = cToRgb(viaColor as never) as unknown as Obj;
 		if (c.alpha !== undefined) out.alpha = c.alpha;
 		return out;

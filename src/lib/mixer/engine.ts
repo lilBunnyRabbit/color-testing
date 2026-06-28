@@ -2,11 +2,11 @@
  * Mixer engine — the pure (DOM-free, unit-testable) core behind the /mixer page.
  *
  * The Mixer shows one card per model, each with a slider per channel. Dragging
- * any slider sets the single canonical color; every OTHER model's sliders then
- * re-read that color. There is NO "base" model: a ColorValue stores the color in
- * OKLCH and every model is a symmetric culori projection (see value.ts), so the
- * engine only ever needs two primitives — read a model's channels off a color,
- * and rebuild a color from a model's full channel set.
+ * any slider sets the color; every OTHER model's sliders then re-read it by
+ * CONVERTING into their own model. A ColorValue is stored natively in one model
+ * (see value.ts) and converts to the others on demand (direct edge → BFS →
+ * culori fallback), so the engine needs two primitives — read a model's channels
+ * off a color (converting if needed), and rebuild a color from a model's channels.
  */
 import { allModels, ColorValue, type ModelDef, type ChannelDef } from '../models';
 

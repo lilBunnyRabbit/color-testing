@@ -203,7 +203,10 @@ const swatchTheme = EditorView.baseTheme({
  * Build the swatch extension. `getHex(name)` returns the variable's hex (or
  * null if it isn't a colour); `mode` selects the visual treatment.
  */
-export function chromaSwatches(getHex: (name: string) => string | null, mode: SwatchMode = 'square') {
+export function chromaSwatches(
+	getHex: (name: string) => string | null,
+	mode: SwatchMode = 'square'
+) {
 	const plugin = ViewPlugin.fromClass(
 		class {
 			decorations: DecorationSet;
@@ -223,9 +226,7 @@ export function chromaSwatches(getHex: (name: string) => string | null, mode: Sw
 				}
 			}
 			update(u: ViewUpdate) {
-				const refresh = u.transactions.some((t) =>
-					t.effects.some((e) => e.is(refreshSwatches))
-				);
+				const refresh = u.transactions.some((t) => t.effects.some((e) => e.is(refreshSwatches)));
 				if (u.docChanged || u.viewportChanged || refresh) {
 					this.decorations = build(u.view, getHex, mode);
 				}

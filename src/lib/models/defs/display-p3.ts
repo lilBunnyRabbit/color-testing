@@ -19,7 +19,9 @@ register(
 			{ key: 'p3_g', localKey: 'g', label: 'Green', culoriField: 'g', range: [0, 1] },
 			{ key: 'p3_b', localKey: 'b', label: 'Blue', culoriField: 'b', range: [0, 1] }
 		],
-		ownMethods: [accessor('isInGamut', 'boolean', 'Displayable in Display P3', (self) => self.inP3)],
+		ownMethods: [
+			accessor('isInGamut', 'boolean', 'Displayable in Display P3', (self) => self.inP3)
+		],
 		inherit: RGB_OPS
 	})
 );

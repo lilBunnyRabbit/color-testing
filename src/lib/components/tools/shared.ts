@@ -8,10 +8,7 @@ import { appendStatements } from '$lib/dsl/emit';
 
 /** All identifiers already defined in the source (colors + plain values). */
 export function takenNames(): string[] {
-	return [
-		...app.scheme.entries.map((e) => e.name),
-		...app.scheme.nonColorVars.map((v) => v.name)
-	];
+	return [...app.scheme.entries.map((e) => e.name), ...app.scheme.nonColorVars.map((v) => v.name)];
 }
 
 /** Append generated DSL statements to the editor source. */
