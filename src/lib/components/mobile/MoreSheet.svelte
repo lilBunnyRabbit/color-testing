@@ -34,6 +34,7 @@
 	});
 
 	const VIEWS: { id: Tab; label: string; desc: string }[] = [
+		{ id: 'styleguide', label: 'Styleguide', desc: 'Tokens · components' },
 		{ id: 'matrix', label: 'Matrix', desc: 'Contrast grid' },
 		{ id: 'explore', label: '3D Explore', desc: 'Gamut viewer' },
 		{ id: 'export', label: 'Export', desc: 'CSS · tokens · swatch' }
@@ -76,7 +77,23 @@
 		{#each VIEWS as v (v.id)}
 			<button class="more-row" class:active={ui.tab === v.id} onclick={() => pickView(v.id)}>
 				<span class="more-ico">
-					{#if v.id === 'matrix'}
+					{#if v.id === 'styleguide'}
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><rect x="3" y="3" width="18" height="7" rx="1.5" /><rect
+								x="3"
+								y="14"
+								width="10"
+								height="7"
+								rx="1.5"
+							/><circle cx="18" cy="17.5" r="2.5" /></svg
+						>
+					{:else if v.id === 'matrix'}
 						<svg
 							viewBox="0 0 24 24"
 							fill="none"

@@ -3,6 +3,7 @@
 	import Inspector from '$lib/components/Inspector.svelte';
 	import Matrix from '$lib/components/Matrix.svelte';
 	import Preview from '$lib/components/Preview.svelte';
+	import Styleguide from '$lib/components/Styleguide.svelte';
 	import ModelViewer from '$lib/components/ModelViewer.svelte';
 	import Studio from '$lib/components/Studio.svelte';
 	import Validate from '$lib/components/Validate.svelte';
@@ -44,6 +45,7 @@
 		{ id: 'inspector', label: 'Inspector' },
 		{ id: 'studio', label: 'Studio' },
 		{ id: 'preview', label: 'Preview' },
+		{ id: 'styleguide', label: 'Styleguide' },
 		{ id: 'matrix', label: 'Matrix' },
 		{ id: 'validate', label: 'Validate' },
 		{ id: 'explore', label: '3D Explore' },
@@ -272,6 +274,8 @@
 					<Validate />
 				{:else if ui.tab === 'preview'}
 					<Preview />
+				{:else if ui.tab === 'styleguide'}
+					<Styleguide />
 				{:else if ui.tab === 'explore'}
 					<ModelViewer seed={app.scheme.entries[0]?.color.hex ?? '#3aa0ff'} />
 				{:else}

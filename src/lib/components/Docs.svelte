@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { manifest, BUILTIN_DOCS } from '$lib/dsl/manifest';
+	import { manifest, BUILTIN_DOCS, type MemberInfo } from '$lib/dsl/manifest';
 	import { MODEL_DOCS } from '$lib/dsl/model-docs';
 	import type { ModelDef, MethodDef, ChannelDef } from '$lib/models';
 
@@ -37,7 +37,9 @@
 
 	const q = $derived(query.trim().toLowerCase());
 	const sorted = $derived(
-		[...manifest.models].sort((a, b) => FAMILY_ORDER.indexOf(a.family) - FAMILY_ORDER.indexOf(b.family))
+		[...manifest.models].sort(
+			(a, b) => FAMILY_ORDER.indexOf(a.family) - FAMILY_ORDER.indexOf(b.family)
+		)
 	);
 
 	function modelNameMatch(m: ModelDef) {
@@ -65,8 +67,26 @@
 		})).filter((g) => g.models.length)
 	);
 
-	const ctors = $derived(manifest.constructors.filter((c) => !q || c.name.toLowerCase().includes(q)));
+	const ctors = $derived(
+		manifest.constructors.filter((c) => !q || c.name.toLowerCase().includes(q))
+	);
 	const builtins = $derived(manifest.builtins.filter((b) => !q || b.includes(q)));
+
+	// Namespaces (preview.* / scale.* / component.*) — documented like models so a
+	// member search ("button", "gradient", "ramp") finds them in one place.
+	const NAMESPACES: { id: string; about: string }[] = [
+		{ id: 'preview', about: 'Values that render as live cards in the Inspector & Preview.' },
+		{ id: 'scale', about: 'Non-color token generators — type, spacing, radius, shadow.' },
+		{ id: 'component', about: 'Component specs rendered & auto-audited in the Styleguide tab.' }
+	];
+	function nsMembers(id: string): MemberInfo[] {
+		const all = manifest.viewMembers.get(id) ?? [];
+		if (!q || id.includes(q)) return all;
+		return all.filter((m) => m.name.toLowerCase().includes(q) || m.doc.toLowerCase().includes(q));
+	}
+	const namespaceGroups = $derived(
+		NAMESPACES.map((ns) => ({ ...ns, members: nsMembers(ns.id) })).filter((g) => g.members.length)
+	);
 
 	function sig(def: MethodDef) {
 		return def.kind === 'method'
@@ -82,30 +102,47 @@
 				<h2 class="docs-title">DSL Reference</h2>
 				<span class="chip">{manifest.models.length} models</span>
 				<button class="icon-btn" onclick={() => onclose?.()} aria-label="Close" title="Close (Esc)">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+					<svg
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg
+					>
 				</button>
 			</div>
-			<input class="docs-search" placeholder="Search models, methods, channels…" bind:value={query} />
+			<input
+				class="docs-search"
+				placeholder="Search models, namespaces, methods…"
+				bind:value={query}
+			/>
 		</header>
 
 		<div class="docs-body scroll">
 			{#if !q}
 				<section class="guide">
-					<button class="guide-head" onclick={() => (showGuide = !showGuide)} aria-expanded={showGuide}>
+					<button
+						class="guide-head"
+						onclick={() => (showGuide = !showGuide)}
+						aria-expanded={showGuide}
+					>
 						<span class="guide-caret" class:open={showGuide}>▸</span>
 						Working with color models — how conversion works
 					</button>
 					{#if showGuide}
 						<div class="guide-body">
 							<p>
-								Every value is <strong>model-agnostic</strong>. Reach any model as a view, then read a
-								channel or call a method — the result is a normal color you keep chaining.
+								Every value is <strong>model-agnostic</strong>. Reach any model as a view, then read
+								a channel or call a method — the result is a normal color you keep chaining.
 							</p>
 							<ul>
 								<li>
 									<strong>Convert by accessing a view.</strong> Any color reaches
-									<strong>any of the {manifest.models.length - 1} models</strong> directly — there's no
-									conversion graph to manage (colors are stored in OKLCH and routed through culori).
+									<strong>any of the {manifest.models.length - 1} models</strong> directly — there's
+									no conversion graph to manage (colors are stored in OKLCH and routed through
+									culori).
 									<code>c.hsl</code>, <code>c.lab</code>, <code>c.cam16</code> …
 								</li>
 								<li>
@@ -147,7 +184,35 @@
 					<h3 class="block-title">Functions</h3>
 					<div class="fn-list">
 						{#each builtins as b (b)}
-							<div class="fn"><code class="fn-name">{b}</code><span class="fn-doc">{BUILTIN_DOCS[b] ?? ''}</span></div>
+							<div class="fn">
+								<code class="fn-name">{b}</code><span class="fn-doc">{BUILTIN_DOCS[b] ?? ''}</span>
+							</div>
+						{/each}
+					</div>
+				</section>
+			{/if}
+
+			{#if namespaceGroups.length}
+				<section class="block">
+					<h3 class="block-title">Namespaces</h3>
+					<div class="models">
+						{#each namespaceGroups as ns (ns.id)}
+							<div class="model">
+								<div class="model-head">
+									<span class="model-label">{ns.id}</span>
+									<code class="view-chip">{ns.id}.*</code>
+								</div>
+								<p class="model-about">{ns.about}</p>
+								<div class="methods">
+									{#each ns.members as m (m.name)}
+										<div class="method">
+											<code class="m-name is-method">.{m.name}</code>
+											<code class="m-sig">{m.detail}</code>
+											<span class="m-doc">{m.doc}</span>
+										</div>
+									{/each}
+								</div>
+							</div>
 						{/each}
 					</div>
 				</section>
@@ -162,8 +227,12 @@
 								<div class="model-head">
 									<span class="model-label" class:stub={m.status === 'coming-soon'}>{m.label}</span>
 									{#if m.id !== 'root'}<code class="view-chip">.{m.id}</code>{/if}
-									{#if m.status === 'experimental'}<span class="status-badge experimental">experimental</span>
-									{:else if m.status === 'coming-soon'}<span class="status-badge soon">coming soon</span>{/if}
+									{#if m.status === 'experimental'}<span class="status-badge experimental"
+											>experimental</span
+										>
+									{:else if m.status === 'coming-soon'}<span class="status-badge soon"
+											>coming soon</span
+										>{/if}
 								</div>
 								{#if MODEL_DOCS[m.id]?.about}
 									<p class="model-about">{MODEL_DOCS[m.id]?.about}</p>
@@ -184,7 +253,9 @@
 								<div class="methods">
 									{#each methodList(m) as def (def.name)}
 										<div class="method">
-											<code class="m-name {def.kind === 'method' ? 'is-method' : 'is-prop'}">.{def.name}</code>
+											<code class="m-name {def.kind === 'method' ? 'is-method' : 'is-prop'}"
+												>.{def.name}</code
+											>
 											<code class="m-sig">{sig(def)}</code>
 											<span class="m-doc">{def.doc}</span>
 										</div>
@@ -196,7 +267,7 @@
 				</section>
 			{/each}
 
-			{#if groups.length === 0 && ctors.length === 0 && builtins.length === 0}
+			{#if groups.length === 0 && ctors.length === 0 && builtins.length === 0 && namespaceGroups.length === 0}
 				<div class="no-results">No matches for “{query}”.</div>
 			{/if}
 		</div>

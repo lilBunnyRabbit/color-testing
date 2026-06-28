@@ -7,6 +7,9 @@
 import { allModels, CHANNELS } from '../models/index.js';
 import type { ModelDef, MethodDef, ParamDef, ChannelDef, ModelStatus } from '../models/index.js';
 import { PREVIEW_SIGNATURES } from './preview.js';
+import { SCALE_SIGNATURES, TOKEN_DOC } from './tokens.js';
+import { COMPONENT_SIGNATURES } from './components.js';
+import { THEME_DOC } from './theme.js';
 
 export interface ConstructorInfo {
 	name: string;
@@ -52,10 +55,30 @@ export const BUILTIN_DOCS: Record<string, string> = {
 	round: 'round(n) → number',
 	floor: 'floor(n) → number',
 	ceil: 'ceil(n) → number',
-	preview: 'preview.* — values that render as cards in the Inspector'
+	preview: 'preview.* — values that render as cards in the Inspector',
+	scale: 'scale.* — non-color token generators (text, space, radius, shadow)',
+	token: TOKEN_DOC,
+	component: 'component.* — component specs that render in the Styleguide tab',
+	theme: THEME_DOC
 };
 
-const BUILTINS = ['mix', 'contrast', 'deltaE', 'clamp', 'abs', 'min', 'max', 'round', 'floor', 'ceil', 'preview'];
+const BUILTINS = [
+	'mix',
+	'contrast',
+	'deltaE',
+	'clamp',
+	'abs',
+	'min',
+	'max',
+	'round',
+	'floor',
+	'ceil',
+	'preview',
+	'scale',
+	'token',
+	'component',
+	'theme'
+];
 
 function sig(params: ParamDef[]): string {
 	return '(' + params.map((p) => p.name + (p.optional ? '?' : '')).join(', ') + ')';
@@ -142,6 +165,25 @@ export function buildManifest(
 		};
 	});
 	viewMembers.set('preview', previewMembers);
+
+	// design-system namespaces — autocomplete after `scale.` and `component.`
+	const registerNamespace = (id: string, sigs: Record<string, { sig: string; doc: string }>) => {
+		const members: MemberInfo[] = Object.entries(sigs).map(([name, s]) => {
+			methodNames.add(name);
+			return {
+				name,
+				kind: 'method' as const,
+				detail: `${s.sig} → ${id}`,
+				doc: s.doc,
+				model: id,
+				backed: true,
+				status: 'stable' as const
+			};
+		});
+		viewMembers.set(id, members);
+	};
+	registerNamespace('scale', SCALE_SIGNATURES);
+	registerNamespace('component', COMPONENT_SIGNATURES);
 
 	// flat channel accessors on a bare value (ok_l, hwb_w, lab_a, lr…)
 	for (const [key, ch] of channels) {

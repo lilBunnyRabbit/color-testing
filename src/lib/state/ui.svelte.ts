@@ -2,7 +2,15 @@
 import type { SwatchMode } from '$lib/dsl/swatch-deco';
 
 export type Theme = 'light' | 'dark';
-export type Tab = 'inspector' | 'studio' | 'matrix' | 'validate' | 'preview' | 'explore' | 'export';
+export type Tab =
+	| 'inspector'
+	| 'studio'
+	| 'matrix'
+	| 'validate'
+	| 'preview'
+	| 'styleguide'
+	| 'explore'
+	| 'export';
 
 export class UiStore {
 	theme = $state<Theme>('light');

@@ -8,6 +8,7 @@
 	import Inspector from '$lib/components/Inspector.svelte';
 	import Studio from '$lib/components/Studio.svelte';
 	import Preview from '$lib/components/Preview.svelte';
+	import Styleguide from '$lib/components/Styleguide.svelte';
 	import Matrix from '$lib/components/Matrix.svelte';
 	import Validate from '$lib/components/Validate.svelte';
 	import ModelViewer from '$lib/components/ModelViewer.svelte';
@@ -23,7 +24,7 @@
 	let editorOpen = $state(false);
 	let showDocs = $state(false);
 
-	const OVERFLOW: Tab[] = ['matrix', 'explore', 'export'];
+	const OVERFLOW: Tab[] = ['styleguide', 'matrix', 'explore', 'export'];
 	const moreActive = $derived(moreOpen || OVERFLOW.includes(ui.tab));
 	const errorCount = $derived(app.result.errors.length);
 
@@ -36,12 +37,23 @@
 	<header class="m-topbar">
 		<div class="brand"><span class="brand-dot"></span> Chromatics</div>
 		<div class="spacer"></div>
-		<span class="chip">{app.scheme.entries.length} color{app.scheme.entries.length !== 1 ? 's' : ''}</span>
+		<span class="chip"
+			>{app.scheme.entries.length} color{app.scheme.entries.length !== 1 ? 's' : ''}</span
+		>
 	</header>
 
 	{#if errorCount > 0}
 		<button class="m-errorbanner" onclick={() => (editorOpen = true)}>
-			<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
+			<svg
+				width="15"
+				height="15"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg
+			>
 			<span>{errorCount} error{errorCount > 1 ? 's' : ''} — tap to edit</span>
 		</button>
 	{/if}
@@ -53,6 +65,8 @@
 			<Studio />
 		{:else if ui.tab === 'preview'}
 			<Preview />
+		{:else if ui.tab === 'styleguide'}
+			<Styleguide />
 		{:else if ui.tab === 'validate'}
 			<Validate />
 		{:else if ui.tab === 'matrix'}
@@ -65,13 +79,26 @@
 	</main>
 
 	<button class="m-fab" onclick={() => (editorOpen = true)} aria-label="Edit code">
-		<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6" /><path d="m8 6-6 6 6 6" /></svg>
+		<svg
+			width="17"
+			height="17"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"><path d="m16 18 6-6-6-6" /><path d="m8 6-6 6 6 6" /></svg
+		>
 		<span>Code</span>
 	</button>
 
 	<BottomTabBar current={ui.tab} onselect={select} onmore={() => (moreOpen = true)} {moreActive} />
 
-	<MoreSheet open={moreOpen} onclose={() => (moreOpen = false)} onopendocs={() => (showDocs = true)} />
+	<MoreSheet
+		open={moreOpen}
+		onclose={() => (moreOpen = false)}
+		onopendocs={() => (showDocs = true)}
+	/>
 	<MobileEditorSheet open={editorOpen} onclose={() => (editorOpen = false)} />
 
 	{#if showDocs}
