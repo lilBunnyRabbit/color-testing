@@ -293,7 +293,6 @@
 	.conv.is-native {
 		background: var(--accent-soft);
 		outline: 1px solid var(--accent);
-		grid-column: 1 / -1;
 	}
 	.conv.is-native .conv-k {
 		color: var(--accent);
