@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { app } from '$lib/state/app.svelte';
 	import { ui } from '$lib/state/ui.svelte';
-	import { cssVars, autoAssign, type Roles } from '$lib/scheme/roles';
+	import { cssVars, NONE_ROLE, type Roles } from '$lib/scheme/roles';
 	import { simulateVision, visionSimulations } from '$lib/analysis/cvd';
 	import { wcagLevels, wcagColor } from '$lib/analysis/wcag';
 	import BrandMark from './demos/BrandMark.svelte';
@@ -16,22 +16,20 @@
 	// closed until the user taps "Roles & audit".
 	let panelOpen = $state(!ui.isMobile);
 
-	// Re-run auto-assignment whenever the set of color names changes.
-	let lastSig = '';
-	$effect(() => {
-		const sig = app.scheme.entries.map((e) => e.name).join('|');
-		if (sig !== lastSig) {
-			lastSig = sig;
-			app.roles = autoAssign(app.scheme.entries);
-		}
-	});
-
+	// Roles auto-resolve in the store (app.effectiveRoles); no clobbering effect.
 	const simEntries = $derived(
 		app.visionSim === 'none'
 			? app.scheme.entries
 			: app.scheme.entries.map((e) => ({ ...e, color: simulateVision(e.color, app.visionSim) }))
 	);
-	const vars = $derived(cssVars({ ...app.scheme, entries: simEntries }, app.roles, app.opacities));
+	// CVD re-tints the theme: rebuild byName off the simulated entries so cssVars
+	// (which resolves roles by name) reads the filtered colors.
+	const simScheme = $derived({
+		...app.scheme,
+		entries: simEntries,
+		byName: new Map(simEntries.map((e) => [e.name, e]))
+	});
+	const vars = $derived(cssVars(simScheme, app.effectiveRoles, app.opacities));
 	const fails = $derived(
 		app.audit.filter((a) => (a.large ? wcagLevels(a.ratio).large : wcagLevels(a.ratio).normal) === 'Fail')
 			.length
@@ -82,19 +80,21 @@
 		{#snippet panelBody()}
 			<div class="pv-section-title">Color Roles</div>
 			{#each roleRows as [key, label, optional] (key)}
+				{@const active = app.effectiveRoles[key]}
 				<div class="role-row">
 					<div
 						class="role-swatch"
-						style="background: {app.roles[key] >= 0
-							? (app.scheme.entries[app.roles[key]]?.color.toCSS() ?? 'var(--border-strong)')
+						style="background: {active
+							? (app.scheme.byName.get(active)?.color.toCSS() ?? 'var(--border-strong)')
 							: 'var(--border-strong)'}"
 					></div>
 					<label class="role-label"
 						>{label}
 						<select class="role-select" bind:value={app.roles[key]}>
-							{#if optional}<option value={-1}>None</option>{/if}
-							{#each app.scheme.entries as e, i (e.name)}
-								<option value={i}>{e.name} ({e.color.hex})</option>
+							<option value="">Auto</option>
+							{#if optional}<option value={NONE_ROLE}>None</option>{/if}
+							{#each app.scheme.entries as e (e.name)}
+								<option value={e.name}>{e.name} ({e.color.hex})</option>
 							{/each}
 						</select>
 					</label>
