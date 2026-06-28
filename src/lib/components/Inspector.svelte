@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Scheme, SchemeEntry } from '$lib/scheme/types';
-	import { getModel, getModelByMode, type ColorValue } from '$lib/models';
+	import { getModel, getModelByMode, ColorValue } from '$lib/models';
 	import type { DSLValue } from '$lib/dsl/evaluator.js';
 	import { nearestName } from '$lib/color-names';
 	import { isPreview } from '$lib/dsl/preview';
@@ -15,11 +15,25 @@
 	function fmtOklch(c: ColorValue) {
 		return `oklch(${r2(c.channel('ok_l'), 1000)} ${r2(c.channel('ok_c'), 10000)} ${r2(c.channel('ok_h'), 100)})`;
 	}
+	const c01 = (n: number) => Math.max(0, Math.min(1, n));
+	// sRGB-clipped copy — out-of-gamut colors (high chroma) have raw r/g/b that go
+	// negative/>1, so the RGB & HSL readouts are taken from this clipped version
+	// (consistent with the hex). OKLCH still shows the true, unclamped value.
+	function srgbClip(c: ColorValue): ColorValue {
+		return ColorValue.from({
+			mode: 'rgb',
+			r: c01(c.channel('r')),
+			g: c01(c.channel('g')),
+			b: c01(c.channel('b'))
+		} as never);
+	}
 	function fmtRgb(c: ColorValue) {
-		return `rgb(${Math.round(c.channel('r') * 255)} ${Math.round(c.channel('g') * 255)} ${Math.round(c.channel('b') * 255)})`;
+		const d = srgbClip(c);
+		return `rgb(${Math.round(d.channel('r') * 255)} ${Math.round(d.channel('g') * 255)} ${Math.round(d.channel('b') * 255)})`;
 	}
 	function fmtHsl(c: ColorValue) {
-		return `hsl(${Math.round(c.channel('h'))} ${Math.round(c.channel('s') * 100)}% ${Math.round(c.channel('l') * 100)}%)`;
+		const d = srgbClip(c);
+		return `hsl(${Math.round(d.channel('h'))} ${Math.round(d.channel('s') * 100)}% ${Math.round(d.channel('l') * 100)}%)`;
 	}
 	function fmtVal(v: DSLValue): string {
 		if (typeof v === 'number') return String(r2(v, 10000));
@@ -36,39 +50,22 @@
 		}, 900);
 	}
 	// The four most-common readouts, always shown for reference.
-	const COMMON_KEY: Record<string, string> = { oklch: 'OKLCH', rgb: 'RGB', hsl: 'HSL' };
-	/** Which common row (if any) IS the variable's own model. */
-	function commonNativeKey(e: SchemeEntry): string | null {
-		if (e.model === 'hex') return 'HEX';
-		return COMMON_KEY[e.color.model] ?? null;
-	}
+	const convs = (c: ColorValue): [string, string][] => [
+		['HEX', c.hex],
+		['OKLCH', fmtOklch(c)],
+		['RGB', fmtRgb(c)],
+		['HSL', fmtHsl(c)]
+	];
 	const rNum = (v: number) => String(Math.round(v * 1000) / 1000);
-	/** The variable's OWN model rendered from its native channels (e.g. HWB, LAB). */
-	function fmtNative(c: ColorValue): { k: string; v: string } | null {
+	/** The variable's value in its OWN model, shown top-right (e.g. hwb(…), lab(…)). */
+	function modelVal(e: SchemeEntry): string {
+		const c = e.color;
+		if (e.model === 'hex') return c.hex;
 		const def = getModel(c.model) ?? getModelByMode(c.model);
-		if (!def || !def.channels.length) return null;
+		if (!def || !def.channels.length) return c.hex;
 		const proj = c.project(def.mode) as unknown as Record<string, number | undefined>;
 		const vals = def.channels.map((ch) => rNum((proj[ch.culoriField] ?? 0) * (ch.scale ?? 1)));
-		return { k: def.id.toUpperCase(), v: `${def.id}(${vals.join(' ')})` };
-	}
-	/**
-	 * Rows for a color: the four common readouts, plus — when the variable's own
-	 * model isn't one of them — its native model on top. The native row is flagged
-	 * so it renders emphasised (the value the color actually IS).
-	 */
-	function rowsFor(e: SchemeEntry): { k: string; v: string; native: boolean }[] {
-		const c = e.color;
-		const base = [
-			{ k: 'HEX', v: c.hex },
-			{ k: 'OKLCH', v: fmtOklch(c) },
-			{ k: 'RGB', v: fmtRgb(c) },
-			{ k: 'HSL', v: fmtHsl(c) }
-		];
-		const nk = commonNativeKey(e);
-		if (nk) return base.map((r) => ({ ...r, native: r.k === nk }));
-		const nat = fmtNative(c);
-		const rows = base.map((r) => ({ ...r, native: false }));
-		return nat ? [{ ...nat, native: true }, ...rows] : rows;
+		return `${def.id}(${vals.join(' ')})`;
 	}
 </script>
 
@@ -88,6 +85,7 @@
 
 		<div class="grid">
 			{#each scheme.entries as e (e.name)}
+				{@const mv = modelVal(e)}
 				<div class="row">
 					<button
 						class="sw"
@@ -100,7 +98,6 @@
 					<div class="meta">
 						<div class="line1">
 							<span class="name">{e.name}</span>
-							<span class="chip">{e.model}</span>
 							<span class="chip chip-name" title="nearest CSS color"
 								>≈ {nearestName(e.color).name}</span
 							>
@@ -109,17 +106,15 @@
 							{:else if e.color.inP3}
 								<span class="badge badge-p3">P3</span>
 							{/if}
+							<button class="model-val mono" title="copy {mv}" onclick={() => copy(mv)}
+								>{copied === mv ? 'copied!' : mv}</button
+							>
 						</div>
 						<div class="convs">
-							{#each rowsFor(e) as row (row.k)}
-								<button
-									class="conv"
-									class:is-native={row.native}
-									onclick={() => copy(row.v)}
-									title={row.native ? `${row.k} — this color's model` : `copy ${row.k}`}
-								>
-									<span class="conv-k">{row.k}</span>
-									<span class="conv-v mono">{copied === row.v ? 'copied!' : row.v}</span>
+							{#each convs(e.color) as [k, v] (k)}
+								<button class="conv" onclick={() => copy(v)} title="copy {k}">
+									<span class="conv-k">{k}</span>
+									<span class="conv-v mono">{copied === v ? 'copied!' : v}</span>
 								</button>
 							{/each}
 						</div>
@@ -289,17 +284,23 @@
 	.conv:hover {
 		background: var(--surface-3);
 	}
-	/* The variable's OWN model — emphasised so its real value is unmistakable. */
-	.conv.is-native {
-		background: var(--accent-soft);
-		outline: 1px solid var(--accent);
+	/* The variable's value in its own model, top-right of the header. */
+	.model-val {
+		margin-left: auto;
+		max-width: 55%;
+		border: none;
+		background: var(--surface-2);
+		color: var(--text-muted);
+		font-size: 11px;
+		padding: 2px 8px;
+		border-radius: var(--radius-xs);
+		cursor: pointer;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
-	.conv.is-native .conv-k {
-		color: var(--accent);
-	}
-	.conv.is-native .conv-v {
-		color: var(--text);
-		font-weight: 600;
+	.model-val:hover {
+		background: var(--surface-3);
 	}
 	.conv-k {
 		font-size: 9px;
