@@ -8,8 +8,19 @@ import { app } from '$lib/state/app.svelte';
 import { isColorValue } from '$lib/models';
 import { chromaCompletions } from './complete';
 import { chromaHover } from './hover';
+import { chromaSwatches, type SwatchMode } from './swatch-deco';
 
 export const completion = chromaCompletions(() => app.result.order);
+
+const hexOf = (name: string) => {
+	const e = app.scheme.byName.get(name);
+	return e ? e.color.hex : null;
+};
+
+/** Build the inline-swatch extension for a given marker style. */
+export function makeSwatches(mode: SwatchMode) {
+	return chromaSwatches(hexOf, mode);
+}
 
 export const hover = chromaHover((name) => {
 	const e = app.scheme.byName.get(name);

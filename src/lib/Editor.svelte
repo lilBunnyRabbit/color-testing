@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { EditorView, keymap, lineNumbers, drawSelection, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
-	import { EditorState, type Extension } from '@codemirror/state';
+	import { EditorState, Compartment, type Extension } from '@codemirror/state';
 	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 	import { syntaxHighlighting, bracketMatching } from '@codemirror/language';
 	import { HighlightStyle } from '@codemirror/language';
@@ -14,16 +14,19 @@
 		value = $bindable(''),
 		onchange,
 		completionSource,
-		hover
+		hover,
+		swatch
 	}: {
 		value: string;
 		onchange?: (value: string) => void;
 		completionSource?: CompletionSource;
 		hover?: Extension;
+		swatch?: Extension;
 	} = $props();
 
 	let container: HTMLDivElement;
 	let view: EditorView;
+	const swatchCompartment = new Compartment();
 
 	const theme = EditorView.theme({
 		'&': {
@@ -181,6 +184,7 @@
 						? [autocompletion({ override: [completionSource], activateOnTyping: true })]
 						: []),
 					...(hover ? [hover] : []),
+					swatchCompartment.of(swatch ?? []),
 					theme,
 					highlight,
 					updateListener,
@@ -199,6 +203,11 @@
 				changes: { from: 0, to: view.state.doc.length, insert: value }
 			});
 		}
+	});
+
+	// Live-swap the swatch marker style when the caller passes a new extension.
+	$effect(() => {
+		if (view) view.dispatch({ effects: swatchCompartment.reconfigure(swatch ?? []) });
 	});
 </script>
 

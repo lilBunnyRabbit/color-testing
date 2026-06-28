@@ -10,7 +10,8 @@
 	import ExportPanel from '$lib/components/ExportPanel.svelte';
 	import { app } from '$lib/state/app.svelte';
 	import { ui, type Tab } from '$lib/state/ui.svelte';
-	import { completion, hover } from '$lib/dsl/editor-bindings';
+	import { completion, hover, makeSwatches } from '$lib/dsl/editor-bindings';
+	import type { SwatchMode } from '$lib/dsl/swatch-deco';
 	import { base } from '$app/paths';
 	import { encodeHash } from '$lib/persistence/url-hash';
 	import { saveScheme, loadScheme, listSchemes } from '$lib/persistence/local-storage';
@@ -21,6 +22,17 @@
 	function onKey(e: KeyboardEvent) {
 		if (e.key === 'Escape' && showDocs) showDocs = false;
 	}
+
+	// Editor colour-marker style — live-swappable from the editor header.
+	const SWATCH_MODES: { value: SwatchMode; label: string }[] = [
+		{ value: 'underline', label: 'Underline' },
+		{ value: 'square', label: 'Swatch' },
+		{ value: 'outline', label: 'Outline' },
+		{ value: 'dot', label: 'Dot' },
+		{ value: 'background', label: 'Fill' },
+		{ value: 'text', label: 'Text' }
+	];
+	const swatch = $derived(makeSwatches(ui.swatchMode));
 
 	const EXAMPLES: Record<string, string> = Object.fromEntries(
 		examples.map((e) => [e.name, e.source])
@@ -161,6 +173,16 @@
 				<div class="pane-head">
 					<span class="pane-title">Editor</span>
 					<div class="spacer"></div>
+					<select
+						class="select swatch-pick"
+						bind:value={ui.swatchMode}
+						aria-label="Colour marker style"
+						title="Colour marker style"
+					>
+						{#each SWATCH_MODES as m (m.value)}
+							<option value={m.value}>{m.label}</option>
+						{/each}
+					</select>
 					<button
 						class="icon-btn"
 						onclick={() => (ui.editorCollapsed = true)}
@@ -180,7 +202,7 @@
 					</button>
 				</div>
 				<div class="editor-host scroll">
-					<Editor bind:value={app.source} completionSource={completion} {hover} />
+					<Editor bind:value={app.source} completionSource={completion} {hover} {swatch} />
 				</div>
 				{#if app.result.errors.length > 0}
 					<div class="errorbar scroll">
@@ -337,6 +359,10 @@
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--text-faint);
+	}
+	.swatch-pick {
+		font-size: 11.5px;
+		padding: 3px 22px 3px 8px;
 	}
 	.editor-host {
 		position: relative;

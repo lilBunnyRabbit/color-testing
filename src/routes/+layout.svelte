@@ -16,6 +16,7 @@
 				if (typeof p.editorWidth === 'number') ui.editorWidth = p.editorWidth;
 				if (typeof p.editorCollapsed === 'boolean') ui.editorCollapsed = p.editorCollapsed;
 				if (p.tab) ui.tab = p.tab as Tab;
+				if (p.swatchMode) ui.swatchMode = p.swatchMode;
 			}
 		} catch {
 			/* ignore */
@@ -53,7 +54,8 @@
 				JSON.stringify({
 					editorWidth: ui.editorWidth,
 					editorCollapsed: ui.editorCollapsed,
-					tab: ui.tab
+					tab: ui.tab,
+					swatchMode: ui.swatchMode
 				})
 			);
 		} catch {
