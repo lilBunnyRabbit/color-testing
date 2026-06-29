@@ -9,6 +9,7 @@
 	import Validate from '$lib/components/Validate.svelte';
 	import Docs from '$lib/components/Docs.svelte';
 	import ExportPanel from '$lib/components/ExportPanel.svelte';
+	import DocControls from '$lib/components/DocControls.svelte';
 	import { app } from '$lib/state/app.svelte';
 	import { ui, type Tab } from '$lib/state/ui.svelte';
 	import { welcome } from '$lib/state/welcome.svelte';
@@ -16,9 +17,6 @@
 	import type { SwatchMode } from '$lib/dsl/swatch-deco';
 	import { base } from '$app/paths';
 	import { encodeHash } from '$lib/persistence/url-hash';
-	import { saveScheme, loadScheme, listSchemes } from '$lib/persistence/local-storage';
-	import { examples } from '../../routes/examples';
-	import { onMount } from 'svelte';
 
 	let showDocs = $state(false);
 	function onKey(e: KeyboardEvent) {
@@ -36,12 +34,6 @@
 	];
 	const swatch = $derived(makeSwatches(ui.swatchMode));
 
-	const EXAMPLES: Record<string, string> = Object.fromEntries(
-		examples.map((e) => [e.name, e.source])
-	);
-	const exampleNames = examples.map((e) => e.name);
-	let currentExample = $state(exampleNames[0]);
-
 	const TABS: { id: Tab; label: string }[] = [
 		{ id: 'inspector', label: 'Inspector' },
 		{ id: 'studio', label: 'Studio' },
@@ -53,30 +45,13 @@
 		{ id: 'export', label: 'Export' }
 	];
 
-	let savedNames = $state<string[]>([]);
 	let shareLabel = $state('Share');
-
-	onMount(() => {
-		savedNames = listSchemes();
-	});
 
 	async function share() {
 		location.hash = await encodeHash({ source: app.source });
 		navigator.clipboard?.writeText(location.href);
 		shareLabel = 'Copied!';
 		setTimeout(() => (shareLabel = 'Share'), 1200);
-	}
-	function save() {
-		const name = prompt('Save scheme as:');
-		if (!name) return;
-		saveScheme(name, app.source);
-		savedNames = listSchemes();
-	}
-	function loadNamed(e: Event) {
-		const sel = e.target as HTMLSelectElement;
-		const src = loadScheme(sel.value);
-		if (src != null) app.source = src;
-		sel.value = '';
 	}
 
 	// --- resizable editor ---
@@ -105,13 +80,7 @@
 	<header class="topbar">
 		<div class="brand"><span class="brand-dot"></span> Chromatics</div>
 
-		<select
-			class="select"
-			bind:value={currentExample}
-			onchange={() => (app.source = EXAMPLES[currentExample])}
-		>
-			{#each exampleNames as name (name)}<option value={name}>{name}</option>{/each}
-		</select>
+		<DocControls variant="bar" />
 
 		{#if app.result.errors.length > 0}
 			<span class="err-chip"
@@ -121,13 +90,6 @@
 
 		<div class="spacer"></div>
 
-		{#if savedNames.length}
-			<select class="select" onchange={loadNamed}>
-				<option value="">Saved…</option>
-				{#each savedNames as n (n)}<option value={n}>{n}</option>{/each}
-			</select>
-		{/if}
-		<button class="btn" onclick={save}>Save</button>
 		<button class="btn" onclick={share}>{shareLabel}</button>
 		<a class="btn" href="{base}/mixer" title="Cross-model color mixer">Mixer</a>
 		<a class="btn" href="{base}/models" title="Color models & systems encyclopedia">Models</a>
