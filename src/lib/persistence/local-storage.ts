@@ -1,6 +1,7 @@
 /** Named schemes + autosave in localStorage (client-only; all calls guarded). */
 const LAST = 'chromatics:last';
 const PREFIX = 'chromatics:scheme:';
+const WELCOMED = 'chromatics:welcomed';
 
 function safe<T>(fn: () => T, fallback: T): T {
 	try {
@@ -36,4 +37,16 @@ export function listSchemes(): string[] {
 		}
 		return out.sort();
 	}, []);
+}
+
+/**
+ * First-run flag for the welcome showcase. Defaults to "already welcomed" when
+ * storage is unavailable (SSR / privacy mode) so the modal never auto-pops in a
+ * context where we can't persist the dismissal.
+ */
+export function hasWelcomed(): boolean {
+	return safe(() => localStorage.getItem(WELCOMED) === '1', true);
+}
+export function markWelcomed(): void {
+	safe(() => localStorage.setItem(WELCOMED, '1'), undefined);
 }

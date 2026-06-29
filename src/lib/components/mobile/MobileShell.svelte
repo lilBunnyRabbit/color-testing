@@ -19,6 +19,7 @@
 	import MobileEditorSheet from './MobileEditorSheet.svelte';
 	import { app } from '$lib/state/app.svelte';
 	import { ui, type Tab } from '$lib/state/ui.svelte';
+	import { welcome } from '$lib/state/welcome.svelte';
 
 	let moreOpen = $state(false);
 	let editorOpen = $state(false);
@@ -40,6 +41,26 @@
 		<span class="chip"
 			>{app.scheme.entries.length} color{app.scheme.entries.length !== 1 ? 's' : ''}</span
 		>
+		<button
+			class="icon-btn"
+			onclick={() => (welcome.open = true)}
+			aria-label="What is Chromatics?"
+			title="What is Chromatics?"
+		>
+			<svg
+				width="18"
+				height="18"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				><circle cx="12" cy="12" r="10" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path
+					d="M12 17h.01"
+				/></svg
+			>
+		</button>
 	</header>
 
 	{#if errorCount > 0}

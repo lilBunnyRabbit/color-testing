@@ -7,6 +7,7 @@
 	import { ENCYCLOPEDIA } from '$lib/dsl/encyclopedia';
 	import { CHANNEL_DOCS } from '$lib/dsl/channel-docs';
 	import { ui } from '$lib/state/ui.svelte';
+	import { welcome } from '$lib/state/welcome.svelte';
 	import GamutPlane from '$lib/components/GamutPlane.svelte';
 
 	const SEED = '#3aa0ff';
@@ -332,6 +333,26 @@
 			<h1 class="enc-title">Color Models &amp; Systems</h1>
 			<span class="chip">{counts.total} entries</span>
 		</div>
+		<button
+			class="icon-btn"
+			onclick={() => (welcome.open = true)}
+			aria-label="What is Chromatics?"
+			title="What is Chromatics?"
+		>
+			<svg
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				><circle cx="12" cy="12" r="10" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path
+					d="M12 17h.01"
+				/></svg
+			>
+		</button>
 		<button
 			class="icon-btn enc-theme"
 			onclick={toggleTheme}
