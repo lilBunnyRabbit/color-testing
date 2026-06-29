@@ -2,17 +2,15 @@
 	/**
 	 * Overflow + app-actions sheet for the mobile shell. Holds the analysis views
 	 * that don't fit the 5-slot bottom bar (Matrix / 3D Explore / Export) and the
-	 * chrome that lived in the desktop top bar (examples, save, share, saved
-	 * schemes, theme, DSL reference). Self-contained: owns its own action state.
+	 * chrome that lived in the desktop top bar (documents via DocControls, share,
+	 * theme, DSL reference). Self-contained: owns its own action state.
 	 */
 	import Sheet from './Sheet.svelte';
+	import DocControls from '$lib/components/DocControls.svelte';
 	import { app } from '$lib/state/app.svelte';
 	import { ui, type Tab } from '$lib/state/ui.svelte';
 	import { encodeHash } from '$lib/persistence/url-hash';
-	import { saveScheme, loadScheme, listSchemes } from '$lib/persistence/local-storage';
-	import { examples } from '../../../routes/examples';
 	import { base } from '$app/paths';
-	import { onMount } from 'svelte';
 
 	let {
 		open = false,
@@ -20,18 +18,7 @@
 		onopendocs
 	}: { open?: boolean; onclose: () => void; onopendocs: () => void } = $props();
 
-	const EXAMPLES: Record<string, string> = Object.fromEntries(
-		examples.map((e) => [e.name, e.source])
-	);
-	const exampleNames = examples.map((e) => e.name);
-	let currentExample = $state(exampleNames[0]);
-
-	let savedNames = $state<string[]>([]);
 	let shareLabel = $state('Share');
-
-	onMount(() => {
-		savedNames = listSchemes();
-	});
 
 	const VIEWS: { id: Tab; label: string; desc: string }[] = [
 		{ id: 'styleguide', label: 'Styleguide', desc: 'Tokens · components' },
@@ -43,25 +30,6 @@
 	function pickView(id: Tab) {
 		ui.tab = id;
 		onclose();
-	}
-	function pickExample(e: Event) {
-		const sel = e.target as HTMLSelectElement;
-		currentExample = sel.value;
-		app.source = EXAMPLES[sel.value];
-		onclose();
-	}
-	function loadNamed(e: Event) {
-		const sel = e.target as HTMLSelectElement;
-		const src = loadScheme(sel.value);
-		if (src != null) app.source = src;
-		sel.value = '';
-		onclose();
-	}
-	function save() {
-		const name = prompt('Save scheme as:');
-		if (!name) return;
-		saveScheme(name, app.source);
-		savedNames = listSchemes();
 	}
 	async function share() {
 		location.hash = await encodeHash({ source: app.source });
@@ -149,72 +117,10 @@
 	</div>
 
 	<div class="more-group">
-		<div class="more-group-title">Scheme</div>
-		<label class="more-row as-field">
-			<span class="more-ico">
-				<svg
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					><rect width="18" height="7" x="3" y="3" rx="1.5" /><rect
-						width="9"
-						height="7"
-						x="3"
-						y="14"
-						rx="1.5"
-					/><rect width="5" height="7" x="16" y="14" rx="1.5" /></svg
-				>
-			</span>
-			<span class="more-label">Example</span>
-			<select class="select more-select" value={currentExample} onchange={pickExample}>
-				{#each exampleNames as name (name)}<option value={name}>{name}</option>{/each}
-			</select>
-		</label>
+		<div class="more-group-title">Document</div>
+		<DocControls variant="sheet" />
 
-		{#if savedNames.length}
-			<label class="more-row as-field">
-				<span class="more-ico">
-					<svg
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><path
-							d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
-						/></svg
-					>
-				</span>
-				<span class="more-label">Saved</span>
-				<select class="select more-select" onchange={loadNamed}>
-					<option value="">Load…</option>
-					{#each savedNames as n (n)}<option value={n}>{n}</option>{/each}
-				</select>
-			</label>
-		{/if}
-
-		<button class="more-row" onclick={save}>
-			<span class="more-ico">
-				<svg
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><path
-						d="M17 21v-8H7v8M7 3v5h8"
-					/></svg
-				>
-			</span>
-			<span class="more-label">Save scheme…</span>
-		</button>
-
-		<button class="more-row" onclick={share}>
+		<button class="more-row more-row-share" onclick={share}>
 			<span class="more-ico">
 				<svg
 					viewBox="0 0 24 24"
@@ -398,9 +304,6 @@
 		color: var(--accent);
 		background: var(--accent-soft);
 	}
-	.more-row.as-field {
-		cursor: default;
-	}
 	.more-ico {
 		display: inline-flex;
 		flex-shrink: 0;
@@ -437,10 +340,5 @@
 		margin-left: auto;
 		color: var(--text-faint);
 		flex-shrink: 0;
-	}
-	.more-select {
-		margin-left: auto;
-		max-width: 58%;
-		font-size: 13px;
 	}
 </style>

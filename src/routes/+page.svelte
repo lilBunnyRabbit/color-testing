@@ -4,25 +4,25 @@
 	import { app } from '$lib/state/app.svelte';
 	import { ui } from '$lib/state/ui.svelte';
 	import { decodeHash } from '$lib/persistence/url-hash';
-	import { saveLast, loadLast } from '$lib/persistence/local-storage';
+	import { docs } from '$lib/state/docs.svelte';
 	import { examples } from './examples';
 	import { onMount } from 'svelte';
 
-	// Seed an example so the app has live data on first paint (both shells).
+	// Live data for first paint (SSR/prerender + first client render). docs.init()
+	// replaces this with the user's active document on mount; this seed, shown
+	// before hydration, is never persisted (autosave is gated on docs.hydrated).
 	if (app.source === '') app.source = examples[0].source;
 
 	onMount(() => {
-		decodeHash(location.hash).then((fromHash) => {
-			if (fromHash) app.source = fromHash.source;
-			else {
-				const last = loadLast();
-				if (last) app.source = last;
+		docs.init();
+		// A share-link in the hash opens as a brand-new document so it never
+		// pollutes an existing slot; drop the hash so a refresh won't re-import.
+		decodeHash(location.hash).then((shared) => {
+			if (shared?.source) {
+				docs.openShared(shared.source);
+				history.replaceState(null, '', location.pathname + location.search);
 			}
 		});
-	});
-
-	$effect(() => {
-		saveLast(app.source);
 	});
 </script>
 
