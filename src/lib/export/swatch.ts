@@ -26,8 +26,7 @@ function labelOn(e: SchemeEntry): string {
 	return Y > 0.36 ? '#11181c' : '#ffffff';
 }
 
-const esc = (s: string) =>
-	s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /** Relative luminance of a #rgb / #rrggbb string; falls back to "light" (1). */
 function hexLuminance(hex: string): number {

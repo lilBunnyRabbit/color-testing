@@ -93,9 +93,13 @@
 				</div>
 			{/each}
 		</div>
-		<p class="hint">Dominant colors by median-cut, sorted by coverage. Names are the nearest CSS color.</p>
+		<p class="hint">
+			Dominant colors by median-cut, sorted by coverage. Names are the nearest CSS color.
+		</p>
 	{:else}
-		<p class="hint">Upload a logo or photo to pull a starter palette. Transparent pixels are ignored.</p>
+		<p class="hint">
+			Upload a logo or photo to pull a starter palette. Transparent pixels are ignored.
+		</p>
 	{/if}
 </div>
 

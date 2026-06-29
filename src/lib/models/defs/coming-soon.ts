@@ -19,13 +19,62 @@ interface Soon {
 }
 
 const SOON: Soon[] = [
-	{ id: 'impossible', label: 'Impossible Color', family: 'other', method: 'chimerical', kind: 'accessor', doc: 'Imaginary/chimerical colour outside the human gamut' },
-	{ id: 'icam', label: 'iCAM', family: 'other', method: 'appearance', kind: 'method', doc: 'Image colour-appearance prediction (spatial)' },
-	{ id: 'rgchroma', label: 'rg Chromaticity', family: 'other', method: 'chromaticity', kind: 'accessor', doc: 'Normalised r,g chromaticity (drops luminance)' },
-	{ id: 'rgcolor', label: 'RG Colour Model', family: 'other', method: 'mix', kind: 'method', doc: 'Two-primary red/green historical model' },
-	{ id: 'gl', label: 'GL (float RGB)', family: 'other', method: 'toFloat', kind: 'method', doc: 'OpenGL normalised float RGBA' },
-	{ id: 'ccmmyk', label: 'CcMmYK (hi-fi)', family: 'subtractive', method: 'separations', kind: 'method', doc: 'Six-ink light-cyan/light-magenta process (needs an ICC profile)' },
-	{ id: 'yjk', label: 'YJK (MSX)', family: 'video', method: 'decode', kind: 'method', doc: 'MSX2 YJK luma/chroma encoding' }
+	{
+		id: 'impossible',
+		label: 'Impossible Color',
+		family: 'other',
+		method: 'chimerical',
+		kind: 'accessor',
+		doc: 'Imaginary/chimerical colour outside the human gamut'
+	},
+	{
+		id: 'icam',
+		label: 'iCAM',
+		family: 'other',
+		method: 'appearance',
+		kind: 'method',
+		doc: 'Image colour-appearance prediction (spatial)'
+	},
+	{
+		id: 'rgchroma',
+		label: 'rg Chromaticity',
+		family: 'other',
+		method: 'chromaticity',
+		kind: 'accessor',
+		doc: 'Normalised r,g chromaticity (drops luminance)'
+	},
+	{
+		id: 'rgcolor',
+		label: 'RG Colour Model',
+		family: 'other',
+		method: 'mix',
+		kind: 'method',
+		doc: 'Two-primary red/green historical model'
+	},
+	{
+		id: 'gl',
+		label: 'GL (float RGB)',
+		family: 'other',
+		method: 'toFloat',
+		kind: 'method',
+		doc: 'OpenGL normalised float RGBA'
+	},
+	{
+		id: 'ccmmyk',
+		label: 'CcMmYK (hi-fi)',
+		family: 'subtractive',
+		method: 'separations',
+		kind: 'method',
+		doc: 'Six-ink light-cyan/light-magenta process (needs an ICC profile)'
+	},
+	{
+		id: 'yjk',
+		label: 'YJK (MSX)',
+		family: 'video',
+		method: 'decode',
+		kind: 'method',
+		doc: 'MSX2 YJK luma/chroma encoding'
+	}
 ];
 
 for (const s of SOON) {

@@ -111,7 +111,13 @@
 						<line x1="0" y1="0" x2={d.x} y2={d.y} class="spoke" />
 						<circle cx={d.x} cy={d.y} r="9" fill={d.hex} class="dot" />
 					{/each}
-					<circle cx={harmony.base.x} cy={harmony.base.y} r="13" fill={harmony.base.hex} class="dot base" />
+					<circle
+						cx={harmony.base.x}
+						cy={harmony.base.y}
+						r="13"
+						fill={harmony.base.hex}
+						class="dot base"
+					/>
 				</svg>
 				<div class="swatches">
 					{#each harmony.swatches as s (s.hue)}

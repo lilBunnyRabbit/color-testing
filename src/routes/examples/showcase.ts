@@ -7,20 +7,20 @@ export const source = `// Chromatics showcase — one seed, the whole engine.
 seed = OKLCH(0.62, 0.16, 264)
 
 // ── Core theme — perceptual lightness, kept in sRGB gamut ──
-background = seed.oklch.atLightness(0.15).oklch.gamutMap()
-surface    = seed.oklch.atLightness(0.21).oklch.gamutMap()
-foreground = seed.oklch.atLightness(0.95).oklch.gamutMap()
-muted      = foreground.oklch.atChroma(0.02).darken(0.22)
+background = seed.atLightness(0.15).gamutMap()
+surface    = seed.atLightness(0.21).gamutMap()
+foreground = seed.atLightness(0.95).gamutMap()
+muted      = foreground.atChroma(0.02).darken(0.22)
 border     = surface.lighten(0.12)
 
 // ── Brand harmony on the OKLCH hue wheel (correct hues) ──
-primary   = seed.oklch.gamutMap()
-secondary = seed.oklch.rotateHue(150).oklch.gamutMap()
-tertiary  = seed.oklch.rotateHue(-90).oklch.gamutMap()
+primary   = seed.gamutMap()
+secondary = seed.rotateHue(150).gamutMap()
+tertiary  = seed.rotateHue(-90).gamutMap()
 
 // Most vivid in-gamut accent at the same lightness (maxChroma → a number)
-vivid  = seed.oklch.rotateHue(60)
-accent = OKLCH(vivid.ok_l, vivid.oklch.maxChroma(), vivid.ok_h)
+vivid  = seed.rotateHue(60)
+accent = OKLCH(vivid.ok_l, vivid.maxChroma(), vivid.ok_h)
 
 // Readable button text, auto-chosen by WCAG contrast (via sRGB)
 primary_fg = primary.srgb.contrastWCAG(foreground) >= 4.5 ? foreground : background

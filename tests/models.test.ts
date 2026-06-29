@@ -66,18 +66,27 @@ describe('ColorValue ≡ legacy Color (parity)', () => {
 			expect(cv.inP3).toBe(legacy.inP3);
 		});
 
+		// OKLCH math now lives on the .oklch view (demoted from the universal root).
 		test(`flat ops oklch(${l}, ${c}, ${h})`, () => {
-			expect((call(cv, 'lighten', 0.1) as ColorValue).hex).toBe(legacy.lighten(0.1).hex);
-			expect((call(cv, 'darken', 0.1) as ColorValue).hex).toBe(legacy.darken(0.1).hex);
-			expect((call(cv, 'saturate', 0.05) as ColorValue).hex).toBe(legacy.saturate(0.05).hex);
-			expect((call(cv, 'desaturate', 0.05) as ColorValue).hex).toBe(legacy.desaturate(0.05).hex);
-			expect((call(cv, 'rotate', 150) as ColorValue).hex).toBe(legacy.rotate(150).hex);
-			expect((call(cv, 'invert') as ColorValue).hex).toBe(legacy.invert().hex);
-			expect((call(cv, 'complement') as ColorValue).hex).toBe(legacy.complement().hex);
-			expect((call(cv, 'shift', { l: 0.1, c: 0.02, h: 20 }) as ColorValue).hex).toBe(
+			expect((viewCall(cv, 'oklch', 'lighten', 0.1) as ColorValue).hex).toBe(
+				legacy.lighten(0.1).hex
+			);
+			expect((viewCall(cv, 'oklch', 'darken', 0.1) as ColorValue).hex).toBe(legacy.darken(0.1).hex);
+			expect((viewCall(cv, 'oklch', 'saturate', 0.05) as ColorValue).hex).toBe(
+				legacy.saturate(0.05).hex
+			);
+			expect((viewCall(cv, 'oklch', 'desaturate', 0.05) as ColorValue).hex).toBe(
+				legacy.desaturate(0.05).hex
+			);
+			expect((viewCall(cv, 'oklch', 'rotate', 150) as ColorValue).hex).toBe(legacy.rotate(150).hex);
+			expect((viewCall(cv, 'oklch', 'invert') as ColorValue).hex).toBe(legacy.invert().hex);
+			expect((viewCall(cv, 'oklch', 'complement') as ColorValue).hex).toBe(legacy.complement().hex);
+			expect((viewCall(cv, 'oklch', 'shift', { l: 0.1, c: 0.02, h: 20 }) as ColorValue).hex).toBe(
 				legacy.shift({ l: 0.1, c: 0.02, h: 20 }).hex
 			);
-			expect((call(cv, 'derive', { l: 0.5 }) as ColorValue).hex).toBe(legacy.derive({ l: 0.5 }).hex);
+			expect((viewCall(cv, 'oklch', 'derive', { l: 0.5 }) as ColorValue).hex).toBe(
+				legacy.derive({ l: 0.5 }).hex
+			);
 			expect((get(cv, 'gamutMapped') as ColorValue).hex).toBe(legacy.gamutMapped.hex);
 		});
 	}
@@ -87,17 +96,16 @@ describe('ColorValue ≡ legacy Color (parity)', () => {
 		const b = Color.OKLCH(0.4, 0.1, 30);
 		const A = OKLCH(0.6, 0.12, 250);
 		const B = OKLCH(0.4, 0.1, 30);
-		expect((call(A, 'mix', B, 0.3) as ColorValue).hex).toBe(a.mix(b, 0.3).hex);
-		expect((call(A, 'mix', B) as ColorValue).hex).toBe(a.mix(b).hex);
+		expect((viewCall(A, 'oklch', 'mix', B, 0.3) as ColorValue).hex).toBe(a.mix(b, 0.3).hex);
+		expect((viewCall(A, 'oklch', 'mix', B) as ColorValue).hex).toBe(a.mix(b).hex);
 	});
 
-	test('contrast parity', () => {
+	test('contrast parity (now via srgb.contrastWCAG)', () => {
 		const a = Color.OKLCH(0.2, 0.02, 250);
 		const b = Color.OKLCH(0.9, 0.03, 250);
-		expect(call(OKLCH(0.2, 0.02, 250), 'contrast', OKLCH(0.9, 0.03, 250)) as number).toBeCloseTo(
-			a.contrast(b),
-			10
-		);
+		expect(
+			viewCall(OKLCH(0.2, 0.02, 250), 'srgb', 'contrastWCAG', OKLCH(0.9, 0.03, 250)) as number
+		).toBeCloseTo(a.contrast(b), 10);
 	});
 
 	test('HSL / RGB / hex constructors match legacy', () => {
@@ -148,11 +156,11 @@ describe('view methods (the special features)', () => {
 		expect(arr[0]).toBeInstanceOf(ColorValue);
 	});
 
-	test('srgb.contrastWCAG matches root.contrast', () => {
+	test('srgb.contrastWCAG matches WCAG contrast', () => {
 		const a = OKLCH(0.2, 0.02, 250);
 		const b = OKLCH(0.9, 0.03, 250);
 		expect(viewCall(a, 'srgb', 'contrastWCAG', b) as number).toBeCloseTo(
-			call(a, 'contrast', b) as number,
+			Color.OKLCH(0.2, 0.02, 250).contrast(Color.OKLCH(0.9, 0.03, 250)),
 			6
 		);
 	});
@@ -160,7 +168,7 @@ describe('view methods (the special features)', () => {
 	test('srgb.luminance / invert / simulateCVD', () => {
 		const c = RGB(0.8, 0.2, 0.2);
 		expect(viewGet(c, 'srgb', 'luminance') as number).toBeGreaterThan(0);
-		expect((viewCall(c, 'srgb', 'invert') as ColorValue)).toBeInstanceOf(ColorValue);
+		expect(viewCall(c, 'srgb', 'invert') as ColorValue).toBeInstanceOf(ColorValue);
 		const cvd = viewCall(c, 'srgb', 'simulateCVD', 'deuteranopia') as ColorValue;
 		expect(cvd).toBeInstanceOf(ColorValue);
 		expect(cvd.hex).not.toBe(c.hex);

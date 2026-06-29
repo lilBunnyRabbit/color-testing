@@ -13,14 +13,24 @@ export function str(v: DSLValue): string {
 	if (typeof v === 'string') return v;
 	throw new Error(`Expected string, got ${typeof v}`);
 }
-/** Accepts a ColorValue or a bare ModelView (unwrapped to its value). */
+/**
+ * Accepts a ColorValue or a ModelView. A ModelView used as a VALUE converts to
+ * its model (c.oklch as an operand means "c converted to oklch") — this is the
+ * conversion-as-value form the same-model ops rely on.
+ */
 export function color(v: DSLValue): ColorValue {
 	if (isColorValue(v)) return v;
-	if (v instanceof ModelView) return v.self;
+	if (v instanceof ModelView) return v.self.to(v.def.id);
 	throw new Error(`Expected color, got ${typeof v}`);
 }
 export function obj(v: DSLValue): PlainObject {
-	if (v !== null && typeof v === 'object' && !Array.isArray(v) && !isColorValue(v) && !(v instanceof ModelView)) {
+	if (
+		v !== null &&
+		typeof v === 'object' &&
+		!Array.isArray(v) &&
+		!isColorValue(v) &&
+		!(v instanceof ModelView)
+	) {
 		return v as PlainObject;
 	}
 	throw new Error(`Expected object, got ${typeof v}`);
@@ -29,6 +39,20 @@ export function obj(v: DSLValue): PlainObject {
 export function optNum(o: PlainObject, key: string): number | undefined {
 	const v = o[key];
 	return v === undefined ? undefined : num(v);
+}
+
+/**
+ * Enforce that a binary color op's operands share a model. The redesign forbids
+ * silently converting one operand to match the other — mix/contrast/deltaE
+ * require both colors already in the same model; the caller converts first.
+ */
+export function assertSameModel(a: ColorValue, b: ColorValue, op: string): void {
+	if (a.model !== b.model) {
+		throw new Error(
+			`${op}() expects both colors in the same model, got ${a.model} and ${b.model}. ` +
+				`Convert one first, e.g. b.to("${a.model}").`
+		);
+	}
 }
 
 // --- scalar helpers ---

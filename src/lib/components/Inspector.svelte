@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Scheme } from '$lib/scheme/types';
-	import type { ColorValue } from '$lib/models';
+	import type { Scheme, SchemeEntry } from '$lib/scheme/types';
+	import { getModel, getModelByMode, ColorValue } from '$lib/models';
 	import type { DSLValue } from '$lib/dsl/evaluator.js';
 	import { nearestName } from '$lib/color-names';
 	import { isPreview } from '$lib/dsl/preview';
@@ -15,11 +15,25 @@
 	function fmtOklch(c: ColorValue) {
 		return `oklch(${r2(c.channel('ok_l'), 1000)} ${r2(c.channel('ok_c'), 10000)} ${r2(c.channel('ok_h'), 100)})`;
 	}
+	const c01 = (n: number) => Math.max(0, Math.min(1, n));
+	// sRGB-clipped copy — out-of-gamut colors (high chroma) have raw r/g/b that go
+	// negative/>1, so the RGB & HSL readouts are taken from this clipped version
+	// (consistent with the hex). OKLCH still shows the true, unclamped value.
+	function srgbClip(c: ColorValue): ColorValue {
+		return ColorValue.from({
+			mode: 'rgb',
+			r: c01(c.channel('r')),
+			g: c01(c.channel('g')),
+			b: c01(c.channel('b'))
+		} as never);
+	}
 	function fmtRgb(c: ColorValue) {
-		return `rgb(${Math.round(c.channel('r') * 255)} ${Math.round(c.channel('g') * 255)} ${Math.round(c.channel('b') * 255)})`;
+		const d = srgbClip(c);
+		return `rgb(${Math.round(d.channel('r') * 255)} ${Math.round(d.channel('g') * 255)} ${Math.round(d.channel('b') * 255)})`;
 	}
 	function fmtHsl(c: ColorValue) {
-		return `hsl(${Math.round(c.channel('h'))} ${Math.round(c.channel('s') * 100)}% ${Math.round(c.channel('l') * 100)}%)`;
+		const d = srgbClip(c);
+		return `hsl(${Math.round(d.channel('h'))} ${Math.round(d.channel('s') * 100)}% ${Math.round(d.channel('l') * 100)}%)`;
 	}
 	function fmtVal(v: DSLValue): string {
 		if (typeof v === 'number') return String(r2(v, 10000));
@@ -35,12 +49,24 @@
 			if (copied === text) copied = null;
 		}, 900);
 	}
-	const convs = (c: ColorValue) => [
+	// The four most-common readouts, always shown for reference.
+	const convs = (c: ColorValue): [string, string][] => [
 		['HEX', c.hex],
 		['OKLCH', fmtOklch(c)],
 		['RGB', fmtRgb(c)],
 		['HSL', fmtHsl(c)]
 	];
+	const rNum = (v: number) => String(Math.round(v * 1000) / 1000);
+	/** The variable's value in its OWN model, shown top-right (e.g. hwb(…), lab(…)). */
+	function modelVal(e: SchemeEntry): string {
+		const c = e.color;
+		if (e.model === 'hex') return c.hex;
+		const def = getModel(c.model) ?? getModelByMode(c.model);
+		if (!def || !def.channels.length) return c.hex;
+		const proj = c.project(def.mode) as unknown as Record<string, number | undefined>;
+		const vals = def.channels.map((ch) => rNum((proj[ch.culoriField] ?? 0) * (ch.scale ?? 1)));
+		return `${def.id}(${vals.join(' ')})`;
+	}
 </script>
 
 <div class="insp scroll">
@@ -59,6 +85,7 @@
 
 		<div class="grid">
 			{#each scheme.entries as e (e.name)}
+				{@const mv = modelVal(e)}
 				<div class="row">
 					<button
 						class="sw"
@@ -71,13 +98,17 @@
 					<div class="meta">
 						<div class="line1">
 							<span class="name">{e.name}</span>
-							<span class="chip">{e.model}</span>
-							<span class="chip chip-name" title="nearest CSS color">≈ {nearestName(e.color).name}</span>
+							<span class="chip chip-name" title="nearest CSS color"
+								>≈ {nearestName(e.color).name}</span
+							>
 							{#if !e.color.inGamut}
 								<span class="badge badge-warn">out of gamut</span>
 							{:else if e.color.inP3}
 								<span class="badge badge-p3">P3</span>
 							{/if}
+							<button class="model-val mono" title="copy {mv}" onclick={() => copy(mv)}
+								>{copied === mv ? 'copied!' : mv}</button
+							>
 						</div>
 						<div class="convs">
 							{#each convs(e.color) as [k, v] (k)}
@@ -251,6 +282,24 @@
 		transition: background 0.12s;
 	}
 	.conv:hover {
+		background: var(--surface-3);
+	}
+	/* The variable's value in its own model, top-right of the header. */
+	.model-val {
+		margin-left: auto;
+		max-width: 55%;
+		border: none;
+		background: var(--surface-2);
+		color: var(--text-muted);
+		font-size: 11px;
+		padding: 2px 8px;
+		border-radius: var(--radius-xs);
+		cursor: pointer;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.model-val:hover {
 		background: var(--surface-3);
 	}
 	.conv-k {

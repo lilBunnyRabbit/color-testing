@@ -1,6 +1,7 @@
 import { name as showcaseName, source as showcaseSource } from './showcase';
 import { name as previewsName, source as previewsSource } from './previews';
 import { name as simpleName, source as simpleSource } from './simple';
+import { name as conversionsName, source as conversionsSource } from './conversions';
 import { name as brandDarkName, source as brandDarkSource } from './brand-dark';
 import { name as brandLightName, source as brandLightSource } from './brand-light';
 import { name as dynamicName, source as dynamicSource } from './dynamic-theme';
@@ -14,6 +15,7 @@ export interface Example {
 /** Ordered list of editor examples. First entry is the default on load. */
 export const examples: Example[] = [
 	{ name: simpleName, source: simpleSource },
+	{ name: conversionsName, source: conversionsSource },
 	{ name: showcaseName, source: showcaseSource },
 	{ name: previewsName, source: previewsSource },
 	{ name: designSystemName, source: designSystemSource },

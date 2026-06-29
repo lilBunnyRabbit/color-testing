@@ -3,7 +3,7 @@ import { evaluate } from '../src/lib/dsl/evaluator';
 import { schemeFromEvalResult } from '../src/lib/scheme/adapter';
 
 const SRC = `bg = OKLCH(0.2, 0.02, 250)
-fg = bg.lighten(0.6)
+fg = bg.oklch.lighten(0.6)
 brand = hex("#6c5ce7")
 success = HSL(140, 0.6, 0.4)
 spacing = 8`;
@@ -34,7 +34,7 @@ describe('schemeFromEvalResult', () => {
 
 	test('description = source slice of the RHS', () => {
 		expect(s.byName.get('bg')?.description).toBe('OKLCH(0.2, 0.02, 250)');
-		expect(s.byName.get('fg')?.description).toBe('bg.lighten(0.6)');
+		expect(s.byName.get('fg')?.description).toBe('bg.oklch.lighten(0.6)');
 	});
 
 	test('preserves the dependency graph', () => {

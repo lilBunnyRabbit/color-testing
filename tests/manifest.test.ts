@@ -20,7 +20,9 @@ describe('manifest <-> runtime (anti-drift)', () => {
 	});
 
 	test('every flat shortcut resolves on a value', () => {
-		for (const m of manifest.valueMembers.filter((x) => x.kind === 'method' || x.kind === 'accessor')) {
+		for (const m of manifest.valueMembers.filter(
+			(x) => x.kind === 'method' || x.kind === 'accessor'
+		)) {
 			const v = probe.member(m.name);
 			expect(v).toBeDefined();
 			if (m.kind === 'method') expect(typeof v).toBe('function');

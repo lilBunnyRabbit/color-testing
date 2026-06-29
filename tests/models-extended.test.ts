@@ -32,7 +32,18 @@ describe('cross-model channel accessors', () => {
 	const c = OKLCH(0.6, 0.12, 250);
 
 	test('every namespaced accessor resolves to a finite number', () => {
-		for (const key of ['hwb_w', 'hwb_b', 'lab_a', 'lab_b', 'lab_l', 'lr', 'lg', 'lb', 'oklab_a', 'p3_r']) {
+		for (const key of [
+			'hwb_w',
+			'hwb_b',
+			'lab_a',
+			'lab_b',
+			'lab_l',
+			'lr',
+			'lg',
+			'lb',
+			'oklab_a',
+			'p3_r'
+		]) {
 			expect(Number.isFinite(c.channel(key))).toBe(true);
 		}
 	});
@@ -79,7 +90,7 @@ describe('CIE Lab ΔE family', () => {
 		const a = OKLCH(0.6, 0.12, 250);
 		const aNudge = OKLCH(0.6005, 0.12, 250);
 		expect(viewCall(a, 'lab', 'isPerceptiblyDifferent', aNudge) as boolean).toBe(false);
-		expect(viewCall(a, 'lab', 'isPerceptiblyDifferent', black) as boolean).toBe(true);
+		expect(viewCall(a, 'lab', 'isPerceptiblyDifferent', black.to('oklch')) as boolean).toBe(true);
 	});
 });
 
@@ -89,7 +100,7 @@ describe('mixing space matters (the model-manipulation thesis)', () => {
 
 	test('Oklab mix, OKLCH mix, and linear blend all differ', () => {
 		const oklab = (viewCall(a, 'oklab', 'mix', b, 0.5) as ColorValue).hex;
-		const oklch = (call(a, 'mix', b, 0.5) as ColorValue).hex; // root mix = OKLCH shortest-arc
+		const oklch = (viewCall(a, 'oklch', 'mix', b, 0.5) as ColorValue).hex; // OKLCH shortest-arc
 		const linear = (viewCall(a, 'lin', 'blend', b, 0.5) as ColorValue).hex;
 		expect(oklab).not.toBe(oklch);
 		expect(linear).not.toBe(oklab);

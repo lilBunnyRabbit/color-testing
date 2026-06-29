@@ -1,12 +1,19 @@
 import { test, expect, describe } from 'bun:test';
 import { evaluate } from '../src/lib/dsl/evaluator';
 import { schemeFromEvalResult } from '../src/lib/scheme/adapter';
-import { toCssVars, toTokens, toTailwind, toMarkdown, exportScheme, kebab } from '../src/lib/export';
+import {
+	toCssVars,
+	toTokens,
+	toTailwind,
+	toMarkdown,
+	exportScheme,
+	kebab
+} from '../src/lib/export';
 import { encodeHash, decodeHash } from '../src/lib/persistence/url-hash';
 
 const SRC = `bg = OKLCH(0.2, 0.02, 250)
 brand = hex("#6c5ce7")
-bg_dark = bg.darken(0.05)`;
+bg_dark = bg.oklch.darken(0.05)`;
 const scheme = schemeFromEvalResult(evaluate(SRC), SRC);
 
 describe('exporters', () => {

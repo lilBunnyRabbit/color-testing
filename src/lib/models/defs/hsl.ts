@@ -21,7 +21,11 @@ register(
 		label: 'HSL',
 		family: 'hue',
 		priority: 'critical',
-		ctor: { name: 'HSL', params: [p('h'), p('s'), p('l')], build: ([h, s, l]) => ({ mode: 'hsl', h, s, l }) as unknown as CuloriColor },
+		ctor: {
+			name: 'HSL',
+			params: [p('h'), p('s'), p('l')],
+			build: ([h, s, l]) => ({ mode: 'hsl', h, s, l }) as unknown as CuloriColor
+		},
 		channels: [
 			{ key: 'h', localKey: 'h', label: 'Hue', culoriField: 'h', range: [0, 360] },
 			{ key: 's', localKey: 's', label: 'Saturation', culoriField: 's', range: [0, 1] },

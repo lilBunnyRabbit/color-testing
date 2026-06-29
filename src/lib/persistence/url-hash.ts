@@ -33,7 +33,9 @@ function b64urlToBytes(s: string): Uint8Array {
 
 async function deflateRaw(bytes: Uint8Array): Promise<Uint8Array> {
 	const cs = new CompressionStream('deflate-raw');
-	const buf = await new Response(new Blob([bytes as BlobPart]).stream().pipeThrough(cs)).arrayBuffer();
+	const buf = await new Response(
+		new Blob([bytes as BlobPart]).stream().pipeThrough(cs)
+	).arrayBuffer();
 	return new Uint8Array(buf);
 }
 

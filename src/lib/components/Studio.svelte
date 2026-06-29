@@ -8,9 +8,21 @@
 
 	type ToolId = 'harmony' | 'ramp' | 'gradient' | 'fix' | 'extract' | 'pick';
 	const TOOLS: { id: ToolId; label: string; blurb: string }[] = [
-		{ id: 'harmony', label: 'Harmony', blurb: 'Complementary, triadic & analogous colors off a base hue.' },
-		{ id: 'ramp', label: 'Tonal ramp', blurb: 'A 50–950 lightness or HCT-tone scale from one color.' },
-		{ id: 'gradient', label: 'Gradient', blurb: 'Interpolate two colors in OKLab, OKLCH or linear light.' },
+		{
+			id: 'harmony',
+			label: 'Harmony',
+			blurb: 'Complementary, triadic & analogous colors off a base hue.'
+		},
+		{
+			id: 'ramp',
+			label: 'Tonal ramp',
+			blurb: 'A 50–950 lightness or HCT-tone scale from one color.'
+		},
+		{
+			id: 'gradient',
+			label: 'Gradient',
+			blurb: 'Interpolate two colors in OKLab, OKLCH or linear light.'
+		},
 		{ id: 'fix', label: 'Auto-fix', blurb: 'Nudge a foreground until it meets a contrast target.' },
 		{ id: 'extract', label: 'From image', blurb: 'Pull a starter palette from a logo or photo.' },
 		{ id: 'pick', label: 'Pick', blurb: 'Eyedropper / hex → a named color.' }
@@ -23,7 +35,9 @@
 	<div class="studio-bar">
 		<div class="seg">
 			{#each TOOLS as t (t.id)}
-				<button class="seg-item {tool === t.id ? 'active' : ''}" onclick={() => (tool = t.id)}>{t.label}</button>
+				<button class="seg-item {tool === t.id ? 'active' : ''}" onclick={() => (tool = t.id)}
+					>{t.label}</button
+				>
 			{/each}
 		</div>
 	</div>

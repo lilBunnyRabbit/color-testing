@@ -23,7 +23,13 @@ for (const s of VIDEO_SPACES) {
 			ctor: {
 				name: s.id.toUpperCase(),
 				params: names.map((n) => p(n)),
-				build: (vals) => ({ mode: s.id, [names[0]]: vals[0], [names[1]]: vals[1], [names[2]]: vals[2] }) as unknown as CuloriColor
+				build: (vals) =>
+					({
+						mode: s.id,
+						[names[0]]: vals[0],
+						[names[1]]: vals[1],
+						[names[2]]: vals[2]
+					}) as unknown as CuloriColor
 			},
 			channels: s.chan.map((c, idx) => ({
 				key: `${s.id}_${c.key}`,
@@ -73,16 +79,22 @@ register(
 			{ key: 'rec2100_b', localKey: 'b', label: "B' (PQ)", culoriField: 'b', range: [0, 1] }
 		],
 		ownMethods: [
-			method('exposure', [p('stops')], 'color', 'Scale linear light by 2^stops (through the PQ curve)', (self, [s]) => {
-				const c = self.project('rec2100') as unknown as Record<string, number | undefined>;
-				const f = 2 ** num(s);
-				return ColorValue.from({
-					mode: 'rec2100',
-					r: pqEncode(pqDecode(c.r ?? 0) * f),
-					g: pqEncode(pqDecode(c.g ?? 0) * f),
-					b: pqEncode(pqDecode(c.b ?? 0) * f)
-				} as unknown as CuloriColor);
-			})
+			method(
+				'exposure',
+				[p('stops')],
+				'color',
+				'Scale linear light by 2^stops (through the PQ curve)',
+				(self, [s]) => {
+					const c = self.project('rec2100') as unknown as Record<string, number | undefined>;
+					const f = 2 ** num(s);
+					return ColorValue.from({
+						mode: 'rec2100',
+						r: pqEncode(pqDecode(c.r ?? 0) * f),
+						g: pqEncode(pqDecode(c.g ?? 0) * f),
+						b: pqEncode(pqDecode(c.b ?? 0) * f)
+					} as unknown as CuloriColor);
+				}
+			)
 		]
 	})
 );

@@ -5,7 +5,7 @@
  */
 import { manifest } from './manifest.js';
 import { getModel, hex, ColorValue, type DSLValue } from '../models/index.js';
-import { num, color, oklchMix } from '../models/util.js';
+import { num, color, lerpInMode, assertSameModel } from '../models/util.js';
 import { wcagContrast, differenceCiede2000 } from '../models/registry.js';
 import { preview } from './preview.js';
 import { scale, tokenFn } from './tokens.js';
@@ -15,28 +15,50 @@ import { themeFn } from './theme.js';
 export function createEnvironment(): Map<string, DSLValue> {
 	const env = new Map<string, DSLValue>();
 
+	// Attach a static `.from(color)` to a constructor: reinterpret/convert any
+	// color INTO this model (the symmetric partner of `color.to(model)`).
+	const withFrom = (fn: DSLValue, modelId: string): DSLValue => {
+		(fn as unknown as Record<string, unknown>).from = (x: DSLValue) => color(x).to(modelId);
+		return fn;
+	};
+
 	// Color constructors — derived from each model's registered ctor.
 	for (const c of manifest.constructors) {
 		if (c.name === 'hex') {
-			env.set('hex', hex);
+			// hex(str) builds from a string; hex.from(color) → the color as sRGB.
+			env.set('hex', withFrom(hex, 'srgb'));
 			continue;
 		}
 		const def = getModel(c.model);
 		if (!def?.ctor) continue;
 		const build = def.ctor.build;
-		env.set(c.name, (...args: DSLValue[]) => ColorValue.from(build(args.map(num))));
+		env.set(
+			c.name,
+			withFrom((...args: DSLValue[]) => ColorValue.from(build(args.map(num))), def.id)
+		);
 	}
 
-	// Free functions
-	env.set('mix', (a: DSLValue, b: DSLValue, r?: DSLValue) =>
-		oklchMix(color(a), color(b), r === undefined ? 0.5 : num(r))
-	);
-	env.set('contrast', (a: DSLValue, b: DSLValue) =>
-		wcagContrast(color(a).project('oklch'), color(b).project('oklch'))
-	);
-	env.set('deltaE', (a: DSLValue, b: DSLValue) =>
-		differenceCiede2000()(color(a).project('lab'), color(b).project('lab'))
-	);
+	// Free functions — binary color ops require both operands in the SAME model.
+	// Generic same-model mix: interpolates in the operands' shared model
+	// (oklch → shortest-arc OKLCH; lrgb → linear blend; etc.).
+	env.set('mix', (a: DSLValue, b: DSLValue, r?: DSLValue) => {
+		const ca = color(a);
+		const cb = color(b);
+		assertSameModel(ca, cb, 'mix');
+		return lerpInMode(ca, cb, ca.model, r === undefined ? 0.5 : num(r));
+	});
+	env.set('contrast', (a: DSLValue, b: DSLValue) => {
+		const ca = color(a);
+		const cb = color(b);
+		assertSameModel(ca, cb, 'contrast');
+		return wcagContrast(ca.project('oklch'), cb.project('oklch'));
+	});
+	env.set('deltaE', (a: DSLValue, b: DSLValue) => {
+		const ca = color(a);
+		const cb = color(b);
+		assertSameModel(ca, cb, 'deltaE');
+		return differenceCiede2000()(ca.project('lab'), cb.project('lab'));
+	});
 
 	// Preview namespace — preview.gradient(a, b), preview.pair(fg, bg), …
 	env.set('preview', preview as unknown as DSLValue);

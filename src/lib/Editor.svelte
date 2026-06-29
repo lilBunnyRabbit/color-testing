@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { EditorView, keymap, lineNumbers, drawSelection, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
+	import {
+		EditorView,
+		keymap,
+		lineNumbers,
+		drawSelection,
+		highlightActiveLine,
+		highlightActiveLineGutter
+	} from '@codemirror/view';
 	import { EditorState, Compartment, type Extension } from '@codemirror/state';
 	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 	import { syntaxHighlighting, bracketMatching } from '@codemirror/language';
@@ -187,7 +194,7 @@
 					swatchCompartment.of(swatch ?? []),
 					theme,
 					highlight,
-					updateListener,
+					updateListener
 				]
 			}),
 			parent: container

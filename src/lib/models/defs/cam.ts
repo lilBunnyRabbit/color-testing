@@ -42,11 +42,35 @@ register(
 			build: ([j, a, b]) => ({ mode: 'cam16ucs', j, a, b }) as unknown as CuloriColor
 		},
 		channels: [
-			{ key: 'cam16ucs_j', localKey: 'j', label: "J′ (lightness)", culoriField: 'j', range: [0, 100] },
-			{ key: 'cam16ucs_a', localKey: 'a', label: "a′ (red–green)", culoriField: 'a', range: [-50, 50] },
-			{ key: 'cam16ucs_b', localKey: 'b', label: "b′ (yellow–blue)", culoriField: 'b', range: [-50, 50] }
+			{
+				key: 'cam16ucs_j',
+				localKey: 'j',
+				label: 'J′ (lightness)',
+				culoriField: 'j',
+				range: [0, 100]
+			},
+			{
+				key: 'cam16ucs_a',
+				localKey: 'a',
+				label: 'a′ (red–green)',
+				culoriField: 'a',
+				range: [-50, 50]
+			},
+			{
+				key: 'cam16ucs_b',
+				localKey: 'b',
+				label: 'b′ (yellow–blue)',
+				culoriField: 'b',
+				range: [-50, 50]
+			}
 		],
-		ownMethods: [mkDeltaEuclidean('deltaE', 'cam16ucs', 'CAM16-UCS colour difference (ΔE′, perceptually uniform)')]
+		ownMethods: [
+			mkDeltaEuclidean(
+				'deltaE',
+				'cam16ucs',
+				'CAM16-UCS colour difference (ΔE′, perceptually uniform)'
+			)
+		]
 	})
 );
 
@@ -63,7 +87,13 @@ register(
 			build: ([j, c, h]) => ({ mode: 'ciecam02', j, c, h }) as unknown as CuloriColor
 		},
 		channels: [
-			{ key: 'ciecam02_j', localKey: 'j', label: 'J (lightness)', culoriField: 'j', range: [0, 100] },
+			{
+				key: 'ciecam02_j',
+				localKey: 'j',
+				label: 'J (lightness)',
+				culoriField: 'j',
+				range: [0, 100]
+			},
 			{ key: 'ciecam02_c', localKey: 'c', label: 'C (chroma)', culoriField: 'c', range: [0, 150] },
 			{ key: 'ciecam02_h', localKey: 'h', label: 'h (hue)', culoriField: 'h', range: [0, 360] }
 		],

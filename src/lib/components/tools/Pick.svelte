@@ -30,7 +30,9 @@
 	async function pick() {
 		try {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const ed = new (window as unknown as { EyeDropper: new () => { open(): Promise<{ sRGBHex: string }> } }).EyeDropper();
+			const ed = new (
+				window as unknown as { EyeDropper: new () => { open(): Promise<{ sRGBHex: string }> } }
+			).EyeDropper();
 			const res = await ed.open();
 			hexInput = res.sRGBHex;
 		} catch {
@@ -49,7 +51,19 @@
 	<div class="controls">
 		{#if hasEyeDropper}
 			<button class="btn" onclick={pick}>
-				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9" /><path d="M3 21v-3l9-9" /><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z" /></svg>
+				<svg
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					><path d="m2 22 1-1h3l9-9" /><path d="M3 21v-3l9-9" /><path
+						d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"
+					/></svg
+				>
 				Eyedropper
 			</button>
 		{/if}
@@ -68,7 +82,9 @@
 		<div class="readout">
 			<span class="big-sw" style="background:{color.hex}"></span>
 			<div class="meta">
-				<div class="line"><b>{color.hex}</b> · nearest <b>{near.name}</b> (ΔE {near.deltaE.toFixed(1)})</div>
+				<div class="line">
+					<b>{color.hex}</b> · nearest <b>{near.name}</b> (ΔE {near.deltaE.toFixed(1)})
+				</div>
 				<div class="line mono">{oklchText(color)}</div>
 			</div>
 		</div>

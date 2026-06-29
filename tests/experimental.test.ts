@@ -18,7 +18,8 @@ describe('status field', () => {
 		expect(status('xyb')).toBe('stable');
 	});
 	test('hand-rolled models are experimental', () => {
-		for (const id of ['cmyk', 'hsluv', 'hpluv', 'hct', 'ral']) expect(status(id)).toBe('experimental');
+		for (const id of ['cmyk', 'hsluv', 'hpluv', 'hct', 'ral'])
+			expect(status(id)).toBe('experimental');
 	});
 	test('licensed catalogs are coming-soon', () => {
 		for (const id of ['pantone', 'munsell', 'ncs', 'hks', 'dic', 'toyo', 'copic', 'trumatch'])
@@ -72,7 +73,9 @@ ink = a.cmyk.totalInk`);
 		expect(asColor(g('y')).hex.toLowerCase()).toBe('#ffff00');
 	});
 	test('limitInk caps total area coverage', () => {
-		const g = run(`a = CMYK(0.9, 0.9, 0.9, 0.9)\nlim = a.cmyk.limitInk(240)\nink = lim.cmyk.totalInk`);
+		const g = run(
+			`a = CMYK(0.9, 0.9, 0.9, 0.9)\nlim = a.cmyk.limitInk(240)\nink = lim.cmyk.totalInk`
+		);
 		expect(g('ink') as number).toBeLessThanOrEqual(240.001);
 		expect(asColor(g('lim'))).toBeDefined();
 	});
@@ -118,7 +121,9 @@ describe('HCT (experimental, CAM16 + tone solver)', () => {
 		}
 	});
 	test('tonalPalette spans tones and atTone sets the tone', () => {
-		const r = evaluate(`r = hex("#1a8cff")\npal = r.hct.tonalPalette()\np40 = r.hct.atTone(40)\nt = p40.hct_t`);
+		const r = evaluate(
+			`r = hex("#1a8cff")\npal = r.hct.tonalPalette()\np40 = r.hct.atTone(40)\nt = p40.hct_t`
+		);
 		expect(r.errors).toEqual([]);
 		expect((r.variables.get('pal')!.value as unknown[]).length).toBe(13);
 		expect(r.variables.get('t')!.value as number).toBeCloseTo(40, 0);

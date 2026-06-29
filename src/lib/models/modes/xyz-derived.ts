@@ -13,11 +13,15 @@ defMode(
 	['x', 'y', 'Y'],
 	'xyz65',
 	(c) => {
-		const x = c.x ?? 0, y = c.y ?? 0, Y = c.Y ?? 0;
+		const x = c.x ?? 0,
+			y = c.y ?? 0,
+			Y = c.Y ?? 0;
 		return y === 0 ? [0, 0, 0] : [(x * Y) / y, Y, ((1 - x - y) * Y) / y];
 	},
 	(c) => {
-		const X = c.x ?? 0, Y = c.y ?? 0, Z = c.z ?? 0;
+		const X = c.x ?? 0,
+			Y = c.y ?? 0,
+			Z = c.z ?? 0;
 		const s = X + Y + Z;
 		return s === 0 ? [Xn / (Xn + Yn + Zn), Yn / (Xn + Yn + Zn), 0] : [X / s, Y / s, Y];
 	},
@@ -30,11 +34,15 @@ defMode(
 	['u', 'v', 'Y'],
 	'xyz65',
 	(c) => {
-		const u = c.u ?? 0, v = c.v ?? 0, Y = c.Y ?? 0;
+		const u = c.u ?? 0,
+			v = c.v ?? 0,
+			Y = c.Y ?? 0;
 		return v === 0 ? [0, 0, 0] : [(Y * 9 * u) / (4 * v), Y, (Y * (12 - 3 * u - 20 * v)) / (4 * v)];
 	},
 	(c) => {
-		const X = c.x ?? 0, Y = c.y ?? 0, Z = c.z ?? 0;
+		const X = c.x ?? 0,
+			Y = c.y ?? 0,
+			Z = c.z ?? 0;
 		const d = X + 15 * Y + 3 * Z;
 		return d === 0 ? [0, 0, 0] : [(4 * X) / d, (9 * Y) / d, Y];
 	},
@@ -47,11 +55,15 @@ defMode(
 	['u', 'v', 'Y'],
 	'xyz65',
 	(c) => {
-		const u = c.u ?? 0, v = c.v ?? 0, Y = c.Y ?? 0;
+		const u = c.u ?? 0,
+			v = c.v ?? 0,
+			Y = c.Y ?? 0;
 		return v === 0 ? [0, 0, 0] : [(1.5 * Y * u) / v, Y, (Y * (12 - 3 * u - 30 * v)) / (6 * v)];
 	},
 	(c) => {
-		const X = c.x ?? 0, Y = c.y ?? 0, Z = c.z ?? 0;
+		const X = c.x ?? 0,
+			Y = c.y ?? 0,
+			Z = c.z ?? 0;
 		const d = X + 15 * Y + 3 * Z;
 		return d === 0 ? [0, 0, 0] : [(4 * X) / d, (6 * Y) / d, Y];
 	},
@@ -69,7 +81,9 @@ defMode(
 	['u', 'v', 'w'],
 	'xyz65',
 	(c) => {
-		const U = c.u ?? 0, V = c.v ?? 0, W = c.w ?? 0;
+		const U = c.u ?? 0,
+			V = c.v ?? 0,
+			W = c.w ?? 0;
 		if (W === 0) return [0, 0, 0];
 		const Y = Math.pow((W + 17) / 25, 3) / 100;
 		const u = u0 + U / (13 * W);
@@ -77,7 +91,9 @@ defMode(
 		return v === 0 ? [0, 0, 0] : [(1.5 * Y * u) / v, Y, (Y * (12 - 3 * u - 30 * v)) / (6 * v)];
 	},
 	(c) => {
-		const X = c.x ?? 0, Y = c.y ?? 0, Z = c.z ?? 0;
+		const X = c.x ?? 0,
+			Y = c.y ?? 0,
+			Z = c.z ?? 0;
 		const [u, v] = ucs60Of(X, Y, Z);
 		const W = 25 * Math.cbrt(Y * 100) - 17;
 		return [13 * W * (u - u0), 13 * W * (v - v0), W];
@@ -93,16 +109,24 @@ defMode(
 	['l', 'a', 'b'],
 	'xyz65',
 	(c) => {
-		const L = c.l ?? 0, a = c.a ?? 0, b = c.b ?? 0;
-		const yn = Yn * 100, xn = Xn * 100, zn = Zn * 100;
+		const L = c.l ?? 0,
+			a = c.a ?? 0,
+			b = c.b ?? 0;
+		const yn = Yn * 100,
+			xn = Xn * 100,
+			zn = Zn * 100;
 		const Y = yn * (L / 100) ** 2;
 		const sq = L / 100;
 		if (sq === 0) return [0, 0, 0];
 		return [(xn * ((a / Ka) * sq + Y / yn)) / 100, Y / 100, (zn * (Y / yn - (b / Kb) * sq)) / 100];
 	},
 	(c) => {
-		const x = (c.x ?? 0) * 100, y = (c.y ?? 0) * 100, z = (c.z ?? 0) * 100;
-		const xn = Xn * 100, yn = Yn * 100, zn = Zn * 100;
+		const x = (c.x ?? 0) * 100,
+			y = (c.y ?? 0) * 100,
+			z = (c.z ?? 0) * 100;
+		const xn = Xn * 100,
+			yn = Yn * 100,
+			zn = Zn * 100;
 		if (y <= 0) return [0, 0, 0];
 		const sq = Math.sqrt(y / yn);
 		return [100 * sq, Ka * ((x / xn - y / yn) / sq), Kb * ((y / yn - z / zn) / sq)];

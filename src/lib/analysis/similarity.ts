@@ -41,7 +41,12 @@ export function similarPairs(entries: SchemeEntry[], maxDeltaE = 10): SimilarPai
 		for (let j = i + 1; j < entries.length; j++) {
 			const dE = deltaE2000(entries[i].color, entries[j].color);
 			if (dE <= maxDeltaE) {
-				out.push({ a: entries[i].name, b: entries[j].name, deltaE: dE, level: similarityLevel(dE) });
+				out.push({
+					a: entries[i].name,
+					b: entries[j].name,
+					deltaE: dE,
+					level: similarityLevel(dE)
+				});
 			}
 		}
 	}

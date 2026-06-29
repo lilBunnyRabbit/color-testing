@@ -21,11 +21,22 @@ register(
 			{ key: 'xyz_z', localKey: 'z', label: 'Z', culoriField: 'z', range: [0, 1] }
 		],
 		ownMethods: [
-			method('scaleLuminance', [p('factor')], 'color', 'Scale luminance (X,Y,Z) preserving chromaticity', (self, [f]) => {
-				const c = self.project('xyz65') as unknown as Record<string, number | undefined>;
-				const k = num(f);
-				return ColorValue.from({ mode: 'xyz65', x: (c.x ?? 0) * k, y: (c.y ?? 0) * k, z: (c.z ?? 0) * k } as unknown as CuloriColor);
-			})
+			method(
+				'scaleLuminance',
+				[p('factor')],
+				'color',
+				'Scale luminance (X,Y,Z) preserving chromaticity',
+				(self, [f]) => {
+					const c = self.project('xyz65') as unknown as Record<string, number | undefined>;
+					const k = num(f);
+					return ColorValue.from({
+						mode: 'xyz65',
+						x: (c.x ?? 0) * k,
+						y: (c.y ?? 0) * k,
+						z: (c.z ?? 0) * k
+					} as unknown as CuloriColor);
+				}
+			)
 		]
 	})
 );

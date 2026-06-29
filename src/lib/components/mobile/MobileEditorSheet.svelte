@@ -18,7 +18,9 @@
 <Sheet {open} {onclose} variant="full" padded={false} title="Code">
 	{#snippet headerRight()}
 		{#if app.result.errors.length > 0}
-			<span class="err-chip">{app.result.errors.length} error{app.result.errors.length > 1 ? 's' : ''}</span>
+			<span class="err-chip"
+				>{app.result.errors.length} error{app.result.errors.length > 1 ? 's' : ''}</span
+			>
 		{/if}
 	{/snippet}
 
@@ -28,7 +30,9 @@
 	{#if app.result.errors.length > 0}
 		<div class="m-errorbar scroll">
 			{#each app.result.errors as err (err.line + err.message)}
-				<div class="err-row"><span class="err-line">line {err.line}</span><span>{err.message}</span></div>
+				<div class="err-row">
+					<span class="err-line">line {err.line}</span><span>{err.message}</span>
+				</div>
 			{/each}
 		</div>
 	{/if}

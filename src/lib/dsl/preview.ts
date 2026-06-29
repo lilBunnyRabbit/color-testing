@@ -67,7 +67,11 @@ export const preview: Record<string, DSLFunction> = {
 	})),
 
 	// — Single-color analysis —
-	space: def(([c, model]) => ({ __preview: 'space', color: color(c), model: optStr(model, 'oklch') })),
+	space: def(([c, model]) => ({
+		__preview: 'space',
+		color: color(c),
+		model: optStr(model, 'oklch')
+	})),
 	channels: def(([c, model]) => ({
 		__preview: 'channels',
 		color: color(c),

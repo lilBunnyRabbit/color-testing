@@ -35,11 +35,16 @@ const withAlpha = <T extends object>(o: T, alpha?: number): T =>
 type Cmyk = { mode: 'cmyk'; c: number; m: number; y: number; k: number; alpha?: number };
 
 const cmykToRgb = (col: Record<string, number | undefined>): Rgb => {
-	const c = col.c ?? 0, m = col.m ?? 0, y = col.y ?? 0, k = col.k ?? 0;
+	const c = col.c ?? 0,
+		m = col.m ?? 0,
+		y = col.y ?? 0,
+		k = col.k ?? 0;
 	return rgb((1 - c) * (1 - k), (1 - m) * (1 - k), (1 - y) * (1 - k), col.alpha);
 };
 const rgbToCmyk = (col: Record<string, number | undefined>): Cmyk => {
-	const r = col.r ?? 0, g = col.g ?? 0, b = col.b ?? 0;
+	const r = col.r ?? 0,
+		g = col.g ?? 0,
+		b = col.b ?? 0;
 	const k = 1 - Math.max(r, g, b);
 	const f = 1 - k;
 	const c = f < 1e-8 ? 0 : (1 - r - k) / f;
@@ -153,11 +158,16 @@ function rgbToHsluv(col: Record<string, number | undefined>) {
 }
 function hsluvToRgb(col: Record<string, number | undefined>): Rgb {
 	const h = col.h ?? 0;
-	let l = col.l ?? 0, C: number;
+	let l = col.l ?? 0,
+		C: number;
 	const s = col.s ?? 0;
-	if (l > 99.9999999) { l = 100; C = 0; }
-	else if (l < 1e-8) { l = 0; C = 0; }
-	else C = (maxChromaForLH(l, h) / 100) * s;
+	if (l > 99.9999999) {
+		l = 100;
+		C = 0;
+	} else if (l < 1e-8) {
+		l = 0;
+		C = 0;
+	} else C = (maxChromaForLH(l, h) / 100) * s;
 	const hr = (h / 180) * Math.PI;
 	const [r, g, b] = xyzToRgb(...luvToXyz([l, Math.cos(hr) * C, Math.sin(hr) * C]));
 	return rgb(r, g, b, col.alpha);
@@ -173,11 +183,16 @@ function rgbToHpluv(col: Record<string, number | undefined>) {
 }
 function hpluvToRgb(col: Record<string, number | undefined>): Rgb {
 	const h = col.h ?? 0;
-	let l = col.l ?? 0, C: number;
+	let l = col.l ?? 0,
+		C: number;
 	const pp = col.p ?? 0;
-	if (l > 99.9999999) { l = 100; C = 0; }
-	else if (l < 1e-8) { l = 0; C = 0; }
-	else C = (maxSafeChromaForL(l) / 100) * pp;
+	if (l > 99.9999999) {
+		l = 100;
+		C = 0;
+	} else if (l < 1e-8) {
+		l = 0;
+		C = 0;
+	} else C = (maxSafeChromaForL(l) / 100) * pp;
 	const hr = (h / 180) * Math.PI;
 	const [r, g, b] = xyzToRgb(...luvToXyz([l, Math.cos(hr) * C, Math.sin(hr) * C]));
 	return rgb(r, g, b, col.alpha);
@@ -218,8 +233,17 @@ const SRGB_TO_XYZ = [
 const WHITE = [95.047, 100.0, 108.883];
 const signum = (x: number) => (x < 0 ? -1 : x > 0 ? 1 : 0);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const labF = (t: number) => { const e = 216 / 24389, k = 24389 / 27; return t > e ? Math.cbrt(t) : (k * t + 16) / 116; };
-const labInvf = (ft: number) => { const e = 216 / 24389, k = 24389 / 27, f3 = ft ** 3; return f3 > e ? f3 : (116 * ft - 16) / k; };
+const labF = (t: number) => {
+	const e = 216 / 24389,
+		k = 24389 / 27;
+	return t > e ? Math.cbrt(t) : (k * t + 16) / 116;
+};
+const labInvf = (ft: number) => {
+	const e = 216 / 24389,
+		k = 24389 / 27,
+		f3 = ft ** 3;
+	return f3 > e ? f3 : (116 * ft - 16) / k;
+};
 const yFromLstar = (l: number) => 100 * labInvf((l + 16) / 116);
 const lstarFromY = (y: number) => 116 * labF(y / 100) - 16;
 
@@ -235,7 +259,9 @@ const VC = (() => {
 	let d = f * (1.0 - (1.0 / 3.6) * Math.exp((-la - 42.0) / 92.0));
 	d = d > 1 ? 1 : d < 0 ? 0 : d;
 	const rgbD = [d * (100 / rW) + 1 - d, d * (100 / gW) + 1 - d, d * (100 / bW) + 1 - d];
-	const k = 1 / (5 * la + 1), k4 = k ** 4, k4F = 1 - k4;
+	const k = 1 / (5 * la + 1),
+		k4 = k ** 4,
+		k4F = 1 - k4;
 	const fl = k4 * la + 0.1 * k4F * k4F * Math.cbrt(5 * la);
 	const n = yFromLstar(50.0) / WHITE[1];
 	const z = 1.48 + Math.sqrt(n);
@@ -245,7 +271,11 @@ const VC = (() => {
 		Math.pow((fl * rgbD[1] * gW) / 100, 0.42),
 		Math.pow((fl * rgbD[2] * bW) / 100, 0.42)
 	];
-	const rgbA = [(400 * rA[0]) / (rA[0] + 27.13), (400 * rA[1]) / (rA[1] + 27.13), (400 * rA[2]) / (rA[2] + 27.13)];
+	const rgbA = [
+		(400 * rA[0]) / (rA[0] + 27.13),
+		(400 * rA[1]) / (rA[1] + 27.13),
+		(400 * rA[2]) / (rA[2] + 27.13)
+	];
 	const aw = (2 * rgbA[0] + rgbA[1] + 0.05 * rgbA[2]) * nbb;
 	return { n, aw, nbb, ncb: nbb, c, nc: f, rgbD, fl, z };
 })();
@@ -254,7 +284,9 @@ function cam16HueChroma(x: number, y: number, z: number) {
 	const rC = 0.401288 * x + 0.650173 * y - 0.051461 * z;
 	const gC = -0.250268 * x + 1.204414 * y + 0.045854 * z;
 	const bC = -0.002079 * x + 0.048952 * y + 0.953127 * z;
-	const rD = VC.rgbD[0] * rC, gD = VC.rgbD[1] * gC, bD = VC.rgbD[2] * bC;
+	const rD = VC.rgbD[0] * rC,
+		gD = VC.rgbD[1] * gC,
+		bD = VC.rgbD[2] * bC;
 	const rAF = Math.pow((VC.fl * Math.abs(rD)) / 100, 0.42);
 	const gAF = Math.pow((VC.fl * Math.abs(gD)) / 100, 0.42);
 	const bAF = Math.pow((VC.fl * Math.abs(bD)) / 100, 0.42);
@@ -278,7 +310,9 @@ function cam16HueChroma(x: number, y: number, z: number) {
 	return { hue, C };
 }
 function rgbToHctParts(r: number, g: number, b: number) {
-	const lr = toLin(r) * 100, lg = toLin(g) * 100, lb = toLin(b) * 100;
+	const lr = toLin(r) * 100,
+		lg = toLin(g) * 100,
+		lb = toLin(b) * 100;
 	const x = dot3(SRGB_TO_XYZ[0], [lr, lg, lb]);
 	const y = dot3(SRGB_TO_XYZ[1], [lr, lg, lb]);
 	const z = dot3(SRGB_TO_XYZ[2], [lr, lg, lb]);
@@ -292,7 +326,9 @@ const XYZ65_TO_LINRGB = [
 	[0.05563007969699366, -0.20397695888897652, 1.0569715142428786]
 ];
 function labToRgbTriplet(L: number, a: number, b: number): [number, number, number] {
-	const fy = (L + 16) / 116, fx = fy + a / 500, fz = fy - b / 200;
+	const fy = (L + 16) / 116,
+		fx = fy + a / 500,
+		fz = fy - b / 200;
 	const X = (labInvf(fx) * WHITE[0]) / 100;
 	const Y = (labInvf(fy) * WHITE[1]) / 100;
 	const Z = (labInvf(fz) * WHITE[2]) / 100;
@@ -311,16 +347,23 @@ const clamp3 = (t: [number, number, number]): [number, number, number] => [
 ];
 
 function hctToRgb(col: Record<string, number | undefined>): Rgb {
-	const h = col.h ?? 0, c = col.c ?? 0, t = col.t ?? 0;
+	const h = col.h ?? 0,
+		c = col.c ?? 0,
+		t = col.t ?? 0;
 	if (t <= 0.01) return rgb(0, 0, 0, col.alpha);
 	if (t >= 99.99) return rgb(1, 1, 1, col.alpha);
-	if (c < 0.5) { const g = clamp3(labToRgbTriplet(t, 0, 0)); return rgb(g[0], g[1], g[2], col.alpha); }
+	if (c < 0.5) {
+		const g = clamp3(labToRgbTriplet(t, 0, 0));
+		return rgb(g[0], g[1], g[2], col.alpha);
+	}
 	let phi = (h * Math.PI) / 180;
 	let best = clamp3(labToRgbTriplet(t, 0, 0));
 	for (let iter = 0; iter < 16; iter++) {
-		const cos = Math.cos(phi), sin = Math.sin(phi);
+		const cos = Math.cos(phi),
+			sin = Math.sin(phi);
 		// largest in-gamut Lab radius at this tone & hue-angle
-		let lo = 0, hi = 200;
+		let lo = 0,
+			hi = 200;
 		for (let i = 0; i < 28; i++) {
 			const mid = (lo + hi) / 2;
 			if (inGamutEps(labToRgbTriplet(t, mid * cos, mid * sin))) lo = mid;
@@ -329,12 +372,19 @@ function hctToRgb(col: Record<string, number | undefined>): Rgb {
 		const gmax = lo;
 		const camCAt = (r: number) => rgbToHctParts(...clamp3(labToRgbTriplet(t, r * cos, r * sin))).c;
 		// radius whose CAM16 chroma hits the target (clamped to the gamut max)
-		let a = 0, b = gmax;
-		for (let i = 0; i < 26; i++) { const mid = (a + b) / 2; if (camCAt(mid) < c) a = mid; else b = mid; }
+		let a = 0,
+			b = gmax;
+		for (let i = 0; i < 26; i++) {
+			const mid = (a + b) / 2;
+			if (camCAt(mid) < c) a = mid;
+			else b = mid;
+		}
 		const r = camCAt(gmax) < c ? gmax : (a + b) / 2;
 		best = clamp3(labToRgbTriplet(t, r * cos, r * sin));
 		const got = rgbToHctParts(...best);
-		let err = h - got.h; while (err > 180) err -= 360; while (err < -180) err += 360;
+		let err = h - got.h;
+		while (err > 180) err -= 360;
+		while (err < -180) err += 360;
 		if (Math.abs(err) < 0.02) break;
 		phi += (err * Math.PI) / 180;
 	}

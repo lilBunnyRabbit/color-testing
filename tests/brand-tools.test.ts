@@ -91,7 +91,9 @@ describe('color names', () => {
 describe('quantize', () => {
 	test('extracts dominant colors from RGBA bytes', () => {
 		// 2 red + 2 blue opaque pixels
-		const data = new Uint8ClampedArray([255, 0, 0, 255, 255, 0, 0, 255, 0, 0, 255, 255, 0, 0, 255, 255]);
+		const data = new Uint8ClampedArray([
+			255, 0, 0, 255, 255, 0, 0, 255, 0, 0, 255, 255, 0, 0, 255, 255
+		]);
 		const cols = quantize(data, 2);
 		expect(cols.length).toBe(2);
 		const hexes = cols.map(rgbToHex);

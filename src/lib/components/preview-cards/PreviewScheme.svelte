@@ -135,7 +135,8 @@
 				</table>
 			</div>
 			<div class="caption">
-				fg × bg contrast{#if gridTruncated} · first {GRID_CAP} of {data.colors.length}{/if}
+				fg × bg contrast{#if gridTruncated}
+					· first {GRID_CAP} of {data.colors.length}{/if}
 			</div>
 		{/if}
 	{:else if data.__preview === 'chart'}
@@ -163,7 +164,9 @@
 			<div class="ui-card" style:background={ui.bg} style:color={ui.fg}>
 				<div class="ui-head">
 					Acme Dashboard
-					<span class="ui-badge" style:background={ui.primary} style:color={ui.primaryText}>New</span>
+					<span class="ui-badge" style:background={ui.primary} style:color={ui.primaryText}
+						>New</span
+					>
 				</div>
 				<p class="ui-body">A compact themed component swatch with real controls.</p>
 				<div class="ui-actions">

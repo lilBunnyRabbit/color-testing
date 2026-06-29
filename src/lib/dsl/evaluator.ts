@@ -144,7 +144,11 @@ function evalNode(node: Node, scope: Scope): DSLValue {
 		}
 
 		case 'MemberExpression': {
-			const n = node as Node & { object: Node; property: Node & { name: string }; computed: boolean };
+			const n = node as Node & {
+				object: Node;
+				property: Node & { name: string };
+				computed: boolean;
+			};
 			const obj = evalNode(n.object, scope);
 			const prop = n.computed
 				? evalNode(n.property, scope)
@@ -176,6 +180,15 @@ function evalNode(node: Node, scope: Scope): DSLValue {
 				const m = obj.member(prop);
 				if (m === undefined) {
 					throw new Error(`'${obj.def.label}' view has no member: ${prop}`);
+				}
+				return m;
+			}
+
+			// Static members on env constructors: OKLCH.from(color), HSL.from(color) …
+			if (typeof obj === 'function' && typeof prop === 'string') {
+				const m = (obj as unknown as Record<string, DSLValue | undefined>)[prop];
+				if (m === undefined) {
+					throw new Error(`'${prop}' is not available on this constructor`);
 				}
 				return m;
 			}

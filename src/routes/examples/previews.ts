@@ -4,7 +4,7 @@ export const source = `// Preview primitives — values that RENDER in the Inspe
 // These aren't colors; each \`preview.*\` draws itself as a card.
 // Open the Inspector tab to see them all.
 brand   = OKLCH(0.62, 0.16, 264)
-accent  = brand.oklch.rotateHue(150).oklch.gamutMap()
+accent  = brand.rotateHue(150).gamutMap()
 bg      = OKLCH(0.16, 0.02, 264)
 surface = OKLCH(0.22, 0.02, 264)
 fg      = OKLCH(0.96, 0.01, 264)

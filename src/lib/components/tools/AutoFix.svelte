@@ -22,7 +22,11 @@
 	let targetId = $state('aa');
 	const target = $derived(TARGETS.find((t) => t.id === targetId)!.ratio);
 
-	function solve(fgc: ColorValue, bgc: ColorValue, want: number): { color: ColorValue; l: number; changed: boolean } {
+	function solve(
+		fgc: ColorValue,
+		bgc: ColorValue,
+		want: number
+	): { color: ColorValue; l: number; changed: boolean } {
 		const c = fgc.channel('ok_c'),
 			h = fgc.channel('ok_h'),
 			l0 = fgc.channel('ok_l');
@@ -60,7 +64,9 @@
 
 <div class="tool">
 	{#if entries.length < 2}
-		<p class="empty">Define at least two colors (a foreground and a background) to auto-fix contrast.</p>
+		<p class="empty">
+			Define at least two colors (a foreground and a background) to auto-fix contrast.
+		</p>
 	{:else}
 		<div class="controls">
 			<label class="field">
@@ -90,7 +96,9 @@
 			<div class="compare">
 				<div class="side">
 					<div class="cap">Before</div>
-					<div class="demo" style="background:{bg.color.hex}; color:{fg.color.hex}">Aa Sample text</div>
+					<div class="demo" style="background:{bg.color.hex}; color:{fg.color.hex}">
+						Aa Sample text
+					</div>
 					<div class="metrics">
 						<span class="m" class:bad={beforeRatio < target}>WCAG {beforeRatio.toFixed(2)}</span>
 						<span class="m">APCA {Math.round(beforeApca)}</span>
@@ -99,7 +107,9 @@
 				<div class="arrow">→</div>
 				<div class="side">
 					<div class="cap">After</div>
-					<div class="demo" style="background:{bg.color.hex}; color:{fixed.color.hex}">Aa Sample text</div>
+					<div class="demo" style="background:{bg.color.hex}; color:{fixed.color.hex}">
+						Aa Sample text
+					</div>
 					<div class="metrics">
 						<span class="m" class:good={afterRatio >= target}>WCAG {afterRatio.toFixed(2)}</span>
 						<span class="m">APCA {Math.round(afterApca)}</span>

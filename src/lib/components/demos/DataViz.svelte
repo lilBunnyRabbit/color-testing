@@ -8,7 +8,9 @@
 
 	/** Cycling color accessor: wraps when there are fewer colors than data points. */
 	const at = (i: number): string =>
-		series.length ? series[((i % series.length) + series.length) % series.length] : 'var(--primary)';
+		series.length
+			? series[((i % series.length) + series.length) % series.length]
+			: 'var(--primary)';
 
 	// ── Sample datasets (hardcoded — this is a preview of the user's palette) ──
 
@@ -107,7 +109,9 @@
 <div class="dv-root">
 	<header class="dv-head">
 		<h2 class="dv-title">Data visualization</h2>
-		<p class="dv-sub">Your palette used as a categorical chart scale — the context brands forget.</p>
+		<p class="dv-sub">
+			Your palette used as a categorical chart scale — the context brands forget.
+		</p>
 	</header>
 
 	{#if !entries.length}
@@ -230,22 +234,10 @@
 							{/each}
 						</g>
 						<!-- Center label -->
-						<text
-							x="80"
-							y="74"
-							text-anchor="middle"
-							class="dv-donut-total"
-							fill="var(--fg)"
-						>
+						<text x="80" y="74" text-anchor="middle" class="dv-donut-total" fill="var(--fg)">
 							{donutTotal}%
 						</text>
-						<text
-							x="80"
-							y="92"
-							text-anchor="middle"
-							class="dv-donut-cap"
-							fill="var(--fg)"
-						>
+						<text x="80" y="92" text-anchor="middle" class="dv-donut-cap" fill="var(--fg)">
 							total
 						</text>
 					</svg>

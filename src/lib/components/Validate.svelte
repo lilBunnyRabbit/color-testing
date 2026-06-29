@@ -51,7 +51,9 @@
 			</div>
 			<div class="ctable">
 				<div class="ct-head">
-					<span>Color</span><span>WCAG</span><span>Normal</span><span>Large</span><span>APCA Lc</span><span>Use</span>
+					<span>Color</span><span>WCAG</span><span>Normal</span><span>Large</span><span
+						>APCA Lc</span
+					><span>Use</span>
 				</div>
 				{#each contrastRows as r (r.name)}
 					<div class="ct-row">
@@ -64,7 +66,10 @@
 					</div>
 				{/each}
 			</div>
-			<p class="note">APCA is polarity-aware (sign = light-on-dark vs dark-on-light) and tracks readability better, especially in dark mode. “Use” is directional guidance, not a pass/fail.</p>
+			<p class="note">
+				APCA is polarity-aware (sign = light-on-dark vs dark-on-light) and tracks readability
+				better, especially in dark mode. “Use” is directional guidance, not a pass/fail.
+			</p>
 		</section>
 
 		<!-- Similarity -->
@@ -77,7 +82,9 @@
 				</label>
 			</div>
 			{#if pairs.length === 0}
-				<p class="ok-line">No pairs within ΔE {simThreshold} — every color is comfortably distinct.</p>
+				<p class="ok-line">
+					No pairs within ΔE {simThreshold} — every color is comfortably distinct.
+				</p>
 			{:else}
 				<div class="pairs">
 					{#each pairs as p (p.a + p.b)}
@@ -88,7 +95,10 @@
 						</div>
 					{/each}
 				</div>
-				<p class="note">ΔE &lt; 2.3 is below the just-noticeable threshold — those pairs will read as the same color.</p>
+				<p class="note">
+					ΔE &lt; 2.3 is below the just-noticeable threshold — those pairs will read as the same
+					color.
+				</p>
 			{/if}
 		</section>
 
@@ -109,19 +119,26 @@
 						<span class="ct-name"><i class="dot" style="background:{p.hex}"></i>{p.name}</span>
 						<span class="seps">
 							{#each [['C', p.c], ['M', p.m], ['Y', p.y], ['K', p.k]] as [k, v] (k)}
-								<span class="sep"><i style="height:{Math.round((v as number) * 100)}%"></i><em>{k}</em></span>
+								<span class="sep"
+									><i style="height:{Math.round((v as number) * 100)}%"></i><em>{k}</em></span
+								>
 							{/each}
 						</span>
 						<span class="mono ink" class:over={p.overInk}>{Math.round(p.totalInk)}%</span>
 						{#if p.overInk}
-							<span class="proof">→ <i class="dot" style="background:{p.proofHex}"></i>{p.proofHex}</span>
+							<span class="proof"
+								>→ <i class="dot" style="background:{p.proofHex}"></i>{p.proofHex}</span
+							>
 						{:else if p.richBlack}
 							<span class="tag">rich black</span>
 						{/if}
 					</div>
 				{/each}
 			</div>
-			<p class="note">Total area coverage over the limit is scaled down to the proofed swatch. Profile-less (naive) CMYK — directional, not a contract proof.</p>
+			<p class="note">
+				Total area coverage over the limit is scaled down to the proofed swatch. Profile-less
+				(naive) CMYK — directional, not a contract proof.
+			</p>
 		</section>
 	{/if}
 </div>

@@ -113,11 +113,11 @@ export class Color {
 	}
 
 	rotate(degrees: number): Color {
-		return new Color(makeOklch(this.ok_l, this.ok_c, ((this.ok_h + degrees) % 360 + 360) % 360));
+		return new Color(makeOklch(this.ok_l, this.ok_c, (((this.ok_h + degrees) % 360) + 360) % 360));
 	}
 
 	invert(): Color {
-		return new Color(makeOklch(1 - this.ok_l, this.ok_c, ((this.ok_h + 180) % 360 + 360) % 360));
+		return new Color(makeOklch(1 - this.ok_l, this.ok_c, (((this.ok_h + 180) % 360) + 360) % 360));
 	}
 
 	complement(): Color {
@@ -132,7 +132,7 @@ export class Color {
 		let diff = h2 - h1;
 		if (diff > 180) diff -= 360;
 		if (diff < -180) diff += 360;
-		const h = ((h1 + diff * ratio) % 360 + 360) % 360;
+		const h = (((h1 + diff * ratio) % 360) + 360) % 360;
 		return new Color(makeOklch(l, c, h));
 	}
 
@@ -141,18 +141,14 @@ export class Color {
 			makeOklch(
 				this.ok_l + (deltas.l ?? 0),
 				this.ok_c + (deltas.c ?? 0),
-				((this.ok_h + (deltas.h ?? 0)) % 360 + 360) % 360
+				(((this.ok_h + (deltas.h ?? 0)) % 360) + 360) % 360
 			)
 		);
 	}
 
 	derive(overrides: { l?: number; c?: number; h?: number }): Color {
 		return new Color(
-			makeOklch(
-				overrides.l ?? this.ok_l,
-				overrides.c ?? this.ok_c,
-				overrides.h ?? this.ok_h
-			)
+			makeOklch(overrides.l ?? this.ok_l, overrides.c ?? this.ok_c, overrides.h ?? this.ok_h)
 		);
 	}
 

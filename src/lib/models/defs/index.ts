@@ -33,3 +33,5 @@ import './print-cone'; // CMY, LMS
 import './coming-soon'; // conceptual / device-specific models (advertised, throw)
 // Color systems — RAL real (experimental), the rest coming-soon.
 import './systems';
+// Direct conversion edges (graph that bypasses culori's RGB hub).
+import '../conversions';

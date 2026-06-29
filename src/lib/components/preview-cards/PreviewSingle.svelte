@@ -78,9 +78,12 @@
 		// Marker: warm at 0%, cool at 100%. Map hue onto that axis.
 		// Warm hues (orange/red/yellow) → left; cool (green/blue) → right.
 		let pos: number;
-		if (h <= 90) pos = (h / 90) * 33; // 0–33% warm zone (0→yellow)
-		else if (h < 150) pos = 33 + ((h - 90) / 60) * 17; // toward neutral
-		else if (h <= 270) pos = 50 + ((h - 150) / 120) * 40; // cool zone
+		if (h <= 90)
+			pos = (h / 90) * 33; // 0–33% warm zone (0→yellow)
+		else if (h < 150)
+			pos = 33 + ((h - 90) / 60) * 17; // toward neutral
+		else if (h <= 270)
+			pos = 50 + ((h - 150) / 120) * 40; // cool zone
 		else pos = 90 + ((h - 270) / 90) * 10; // wrap toward warm
 		return { hex: data.color.hex, hue: h, label, pos: clamp(pos) };
 	});
@@ -173,7 +176,11 @@
 					<span class="temp-marker" style:left={temp.pos + '%'}></span>
 				</div>
 				<div class="temp-meta">
-					<span class="temp-label" class:warm={temp.label === 'Warm'} class:cool={temp.label === 'Cool'}>
+					<span
+						class="temp-label"
+						class:warm={temp.label === 'Warm'}
+						class:cool={temp.label === 'Cool'}
+					>
 						{temp.label}
 					</span>
 					<span class="temp-hue">hue {Math.round(temp.hue)}°</span>
