@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { hex, ColorValue } from '$lib/models';
 	import { ui } from '$lib/state/ui.svelte';
+	import { welcome } from '$lib/state/welcome.svelte';
 	import { orderedMixerModels, seedVals, buildFromVals, readableText } from '$lib/mixer/engine';
 	import ModelCard from '$lib/components/mixer/ModelCard.svelte';
 
@@ -315,6 +316,26 @@
 		<button class="tbtn" onclick={randomColor} title="Random color">Random</button>
 		<button class="tbtn" onclick={() => setColor(hex(SEED))} title="Reset">Reset</button>
 		<a class="tbtn" href="{base}/models" title="Color models & systems encyclopedia">Models</a>
+		<button
+			class="icon-btn"
+			onclick={() => (welcome.open = true)}
+			aria-label="What is Chromatics?"
+			title="What is Chromatics?"
+		>
+			<svg
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				><circle cx="12" cy="12" r="10" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path
+					d="M12 17h.01"
+				/></svg
+			>
+		</button>
 		<button
 			class="icon-btn"
 			onclick={() => ui.toggleTheme()}
